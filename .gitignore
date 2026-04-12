@@ -41,9 +41,11 @@ out/
 
 ### Claude Code ###
 .claude/
+CLAUDE.md
 
 ### 환경변수 ###
 .env
 
 ### Docs ###
 docs/참고자료/
+docs/기술_도입_전략.md

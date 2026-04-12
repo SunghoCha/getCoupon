@@ -1,13 +1,13 @@
-package com.sungho.getcoupon;
+package com.sungho.letterpick;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class GetCouponApplication {
+public class LetterPickApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(GetCouponApplication.class, args);
+        SpringApplication.run(LetterPickApplication.class, args);
     }
 
 }

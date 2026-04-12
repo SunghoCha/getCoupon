@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.sungho'
 version = '0.0.1-SNAPSHOT'
-description = 'getCoupon'
+description = 'letterPick'
 
 java {
     toolchain {
