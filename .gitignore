@@ -38,6 +38,8 @@ out/
 
 ### MCP ###
 .serena/
+.mcp.json
+.playwright-mcp/
 
 ### Claude Code ###
 .claude/
@@ -49,3 +51,4 @@ CLAUDE.md
 ### Docs ###
 docs/참고자료/
 docs/기술_도입_전략.md
+docs/archive/

@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 public class TestLetterPickApplication {
 
     public static void main(String[] args) {
-        SpringApplication.from(LetterPickApplication::main).with(TestcontainersConfiguration.class).run(args);
+        SpringApplication.from(LetterPickApplication::main).with(LetterPickTestConfiguration.class).run(args);
     }
 
 }
