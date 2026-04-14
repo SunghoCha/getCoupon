@@ -12,7 +12,7 @@ public record Nickname(String name) {
     public Nickname {
         Objects.requireNonNull(name);
         if (name.isBlank() || name.length() < 2 || name.length() > 20 || !ALLOWED_PATTERN.matcher(name).matches()) {
-            throw new IllegalArgumentException("닉네임 형식이 올바르지 않습니다." + name);
+            throw new IllegalArgumentException("닉네임 형식이 올바르지 않습니다.");
         }
     }
 }

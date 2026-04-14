@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.domain;
 
+import com.sungho.letterpick.member.application.provided.MemberRegisterRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class MemberFixture {
@@ -17,4 +18,5 @@ public class MemberFixture {
         ReflectionTestUtils.setField(member, "id", id);
         return member;
     }
+
 }

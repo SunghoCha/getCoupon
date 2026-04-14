@@ -13,7 +13,7 @@ public record Email(String address) {
     public Email {
         Objects.requireNonNull(address);
         if (!EMAIL_PATTERN.matcher(address).matches()) {
-            throw new IllegalArgumentException("이메일 형식이 바르지 않습니다: " + address);
+            throw new IllegalArgumentException("이메일 형식이 바르지 않습니다.");
         }
     }
 }
