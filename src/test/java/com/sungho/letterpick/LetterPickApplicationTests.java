@@ -1,12 +1,12 @@
-package com.sungho.getcoupon;
+package com.sungho.letterpick;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
-@Import(TestcontainersConfiguration.class)
+@Import(LetterPickTestConfiguration.class)
 @SpringBootTest
-class GetCouponApplicationTests {
+class LetterPickApplicationTests {
 
     @Test
     void contextLoads() {
