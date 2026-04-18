@@ -56,6 +56,17 @@ class MemberTest {
     }
 
     @Test
+    @DisplayName("DEACTIVATED 회원이 닉네임 변경하면 실패한다")
+    void changeNicknameFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(() -> member.changeNickname(new Nickname("수정된닉네임"))).isInstanceOf(MemberStatusException.class);
+
+    }
+
+    @Test
     @DisplayName("ACTIVE 회원을 정지하면 SUSPENDED가 된다")
     void suspendWhenActive() {
         // given
@@ -80,10 +91,20 @@ class MemberTest {
     }
 
     @Test
-    @DisplayName("ACTIVE 회원이 본인 ID로 탈퇴하면 DEACTIVATED가 된다")
-    void withdrawByOwner() {
+    @DisplayName("DEACTIVATED 회원을 정지하면 실패한다")
+    void suspendFailsWhenDeactivated() {
         // given
-        Member member = MemberFixture.createMember(1L);
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(member::suspend).isInstanceOf(MemberStatusException.class);
+    }
+
+    @Test
+    @DisplayName("ACTIVE 회원이 탈퇴하면 DEACTIVATED가 된다")
+    void withdrawWhenActive() {
+        // given
+        Member member = MemberFixture.createMember();
         // when
         member.withdraw();
         // then
@@ -92,14 +113,24 @@ class MemberTest {
 
 
     @Test
-    @DisplayName("ACTIVE가 아닌 상태에서 본인 탈퇴하면 실패한다")
+    @DisplayName("ACTIVE가 아닌 상태에서 탈퇴하면 실패한다")
     void withdrawFailsWhenNotActive() {
         // given
-        Member member = MemberFixture.createMember(1L);
+        Member member = MemberFixture.createMember();
         member.suspend();
         // then
         assertThatThrownBy(member::withdraw)
                 .isInstanceOf(MemberStatusException .class);
+    }
+
+    @Test
+    @DisplayName("DEACTIVATED 회원이 탈퇴하면 실패한다")
+    void withdrawFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(member::withdraw).isInstanceOf(MemberStatusException.class);
     }
 
     @Test
@@ -121,6 +152,15 @@ class MemberTest {
         Member member = MemberFixture.createMember();
         // then
         assertThatThrownBy(member::withdrawByAdmin).isInstanceOf(MemberStatusException.class);
+    }
 
+    @Test
+    @DisplayName("DEACTIVATED 회원을 관리자가 탈퇴 처리하면 실패한다")
+    void withdrawByAdminFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(member::withdrawByAdmin).isInstanceOf(MemberStatusException.class);
     }
 }
