@@ -1,6 +1,4 @@
 package com.sungho.letterpick.member.application.provided;
 
-public record MemberWithdrawByAdminRequest(
-        Long memberId
-) {
+public record MemberWithdrawByAdminRequest(Long memberId) {
 }

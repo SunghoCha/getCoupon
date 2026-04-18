@@ -72,8 +72,8 @@ public class MemberModifyService implements MemberRegister {
         member.withdrawByAdmin();
     }
 
-    private Member findMember(Long requesterId) {
-        return memberRepository.findById(requesterId)
+    private Member findMember(Long memberId) {
+        return memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
     }
 }
