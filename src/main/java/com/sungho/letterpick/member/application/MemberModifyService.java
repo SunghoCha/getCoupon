@@ -17,7 +17,7 @@ import java.util.Objects;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class MemberModifyService implements MemberRegister {
+public class MemberModifyService implements MemberModifier {
 
     private final MemberRepository memberRepository;
 

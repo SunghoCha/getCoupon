@@ -19,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Import(LetterPickTestConfiguration.class)
-class MemberRegisterTest {
+class MemberModifierTest {
 
     @Autowired
-    MemberRegister memberRegister;
+    MemberModifier memberModifier;
     @Autowired
     private MemberRepository memberRepository;
 
@@ -37,7 +37,7 @@ class MemberRegisterTest {
         // given
         MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
         // when
-        Member member = memberRegister.register(request);
+        Member member = memberModifier.register(request);
         // then
         assertThat(member.getId()).isNotNull();
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
@@ -52,9 +52,9 @@ class MemberRegisterTest {
         // given
         MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
         MemberRegisterRequest otherRequest = new MemberRegisterRequest("email@test.com", "other");
-        memberRegister.register(request);
+        memberModifier.register(request);
         // then
-        assertThatThrownBy(() -> memberRegister.register(otherRequest))
+        assertThatThrownBy(() -> memberModifier.register(otherRequest))
                 .isInstanceOf(DuplicateEmailException.class);
 
     }
@@ -67,9 +67,9 @@ class MemberRegisterTest {
         MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
         MemberRegisterRequest otherRequest = new MemberRegisterRequest("other@test.com", "nickname");
         // when
-        memberRegister.register(request);
+        memberModifier.register(request);
         // then
-        assertThatThrownBy(() -> memberRegister.register(otherRequest))
+        assertThatThrownBy(() -> memberModifier.register(otherRequest))
                 .isInstanceOf(DuplicateNicknameException.class)
                 .hasMessageContaining(MemberErrorCode.DUPLICATE_NICKNAME.getMessage());
     }
@@ -82,7 +82,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(savedMember.getId(), "수정된닉네임");
         // when
-        memberRegister.changeNickname(request);
+        memberModifier.changeNickname(request);
 
         // then
         Member changedMember = memberRepository.findById(savedMember.getId()).orElseThrow();
@@ -96,7 +96,7 @@ class MemberRegisterTest {
         // given
         MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(1L, "수정된닉네임");
         // then
-        assertThatThrownBy(() -> memberRegister.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(request))
                 .isInstanceOf(MemberNotFoundException.class);
 
     }
@@ -109,7 +109,7 @@ class MemberRegisterTest {
         Member otherMember = memberRepository.save(MemberFixture.createMember("test2@email.com", "닉네임2"));
         MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(otherMember.getId(), member.getNickname().name());
         // then
-        assertThatThrownBy(() -> memberRegister.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(request))
                 .isInstanceOf(DuplicateNicknameException.class);
 
     }
@@ -121,7 +121,7 @@ class MemberRegisterTest {
         Member member = memberRepository.save(MemberFixture.createMember("test1@email.com", "닉네임1"));
         MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(member.getId(), member.getNickname().name());
         // when
-        memberRegister.changeNickname(request);
+        memberModifier.changeNickname(request);
         // then
         Member savedMember = memberRepository.findById(member.getId()).orElseThrow();
         assertThat(savedMember.getNickname()).isEqualTo(member.getNickname());
@@ -137,9 +137,23 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberNicknameChangeRequest request =
                 new MemberNicknameChangeRequest(savedMember.getId(), "새로운닉네임");
-        // when
-        assertThatThrownBy(() -> memberRegister.changeNickname(request)).isInstanceOf(MemberStatusException.class);
-        
+        // then
+        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+                .isInstanceOf(MemberStatusException.class);
+    }
+
+    @Test
+    @DisplayName("DEACTIVATED 회원이 닉네임을 변경하면 실패한다")
+    void changeNicknameFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        Member savedMember = memberRepository.save(member);
+        MemberNicknameChangeRequest request =
+                new MemberNicknameChangeRequest(savedMember.getId(), "새로운닉네임");
+        // then
+        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+                .isInstanceOf(MemberStatusException.class);
     }
 
     @Test
@@ -148,7 +162,7 @@ class MemberRegisterTest {
         // given
         Member savedMember = memberRepository.save(MemberFixture.createMember());
         // when
-        memberRegister.withdraw(savedMember.getId());
+        memberModifier.withdraw(savedMember.getId());
         // then
         Member foundMember = memberRepository.findById(savedMember.getId()).orElseThrow();
         assertThat(foundMember.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
@@ -158,7 +172,7 @@ class MemberRegisterTest {
     @DisplayName("존재하지 않는 회원이 탈퇴하면 실패한다")
     void withdrawFailsWhenMemberNotFound() {
         // then
-        assertThatThrownBy(() -> memberRegister.withdraw(1L)).isInstanceOf(MemberNotFoundException.class);
+        assertThatThrownBy(() -> memberModifier.withdraw(1L)).isInstanceOf(MemberNotFoundException.class);
     }
 
     @Test
@@ -170,7 +184,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
 
         // then
-        assertThatThrownBy(() -> memberRegister.withdraw(savedMember.getId()))
+        assertThatThrownBy(() -> memberModifier.withdraw(savedMember.getId()))
                 .isInstanceOf(MemberStatusException.class);
 
     }
@@ -183,7 +197,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberSuspendRequest request = new MemberSuspendRequest(savedMember.getId());
         // when
-        memberRegister.suspend(request);
+        memberModifier.suspend(request);
         // then
         Member foundMember = memberRepository.findById(savedMember.getId()).orElseThrow();
         assertThat(foundMember.getStatus()).isEqualTo(MemberStatus.SUSPENDED);
@@ -195,7 +209,7 @@ class MemberRegisterTest {
         // given
         MemberSuspendRequest request = new MemberSuspendRequest(1L);
         // then
-        assertThatThrownBy(() -> memberRegister.suspend(request))
+        assertThatThrownBy(() -> memberModifier.suspend(request))
                 .isInstanceOf(MemberNotFoundException.class);
     }
 
@@ -208,7 +222,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberSuspendRequest request = new MemberSuspendRequest(savedMember.getId());
         // then
-        assertThatThrownBy(() -> memberRegister.suspend(request))
+        assertThatThrownBy(() -> memberModifier.suspend(request))
                 .isInstanceOf(MemberStatusException.class);
     }
 
@@ -221,7 +235,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(savedMember.getId());
         // when
-        memberRegister.withdrawByAdmin(request);
+        memberModifier.withdrawByAdmin(request);
         // then
         Member foundMember = memberRepository.findById(savedMember.getId()).orElseThrow();
         assertThat(foundMember.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
@@ -233,7 +247,7 @@ class MemberRegisterTest {
         // given
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(1L);
         // then
-        assertThatThrownBy(() -> memberRegister.withdrawByAdmin(request))
+        assertThatThrownBy(() -> memberModifier.withdrawByAdmin(request))
                 .isInstanceOf(MemberNotFoundException.class);
     }
 
@@ -245,7 +259,7 @@ class MemberRegisterTest {
         Member savedMember = memberRepository.save(member);
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(savedMember.getId());
         // then
-        assertThatThrownBy(() -> memberRegister.withdrawByAdmin(request))
+        assertThatThrownBy(() -> memberModifier.withdrawByAdmin(request))
                 .isInstanceOf(MemberStatusException.class);
     }
 }
