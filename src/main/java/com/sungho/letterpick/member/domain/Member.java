@@ -50,9 +50,7 @@ public class Member {
     }
 
     public void changeNickname(Nickname nickname) {
-        if (this.status != MemberStatus.ACTIVE) {
-            throw new MemberStatusException();
-        }
+        ensureCanChangeNickname();
         this.nickname = requireNonNull(nickname);
     }
 
@@ -75,5 +73,11 @@ public class Member {
             throw new MemberStatusException();
         }
         this.status = MemberStatus.DEACTIVATED;
+    }
+
+    public void ensureCanChangeNickname() {
+        if (this.status != MemberStatus.ACTIVE) {
+            throw new MemberStatusException();
+        }
     }
 }

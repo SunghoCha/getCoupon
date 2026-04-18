@@ -41,7 +41,7 @@ public class MemberModifyService implements MemberRegister {
     @Override
     public void changeNickname(MemberNicknameChangeRequest request) {
         Member member = findMember(request.memberId());
-
+        member.ensureCanChangeNickname();
         Nickname nickname = new Nickname(request.nickname());
 
         // TODO: race condition — exists 검증과 commit 사이 동시성 문제. 현재는 DB UNIQUE 제약이 최종 방어.
