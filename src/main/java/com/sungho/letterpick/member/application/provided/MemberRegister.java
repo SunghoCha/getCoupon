@@ -8,4 +8,8 @@ public interface MemberRegister {
     void changeNickname(MemberNicknameChangeRequest request);
 
     void withdraw(Long requesterId);
+
+    void suspend(MemberSuspendRequest request);
+
+    void withdrawByAdmin(MemberWithdrawByAdminRequest request);
 }

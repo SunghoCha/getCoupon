@@ -174,6 +174,78 @@ class MemberRegisterTest {
                 .isInstanceOf(MemberStatusException.class);
 
     }
-    
 
+    @Test
+    @DisplayName("관리자가 회원을 정지시킨다")
+    void suspend() {
+        // given
+        Member member = MemberFixture.createMember();
+        Member savedMember = memberRepository.save(member);
+        MemberSuspendRequest request = new MemberSuspendRequest(savedMember.getId());
+        // when
+        memberRegister.suspend(request);
+        // then
+        Member foundMember = memberRepository.findById(savedMember.getId()).orElseThrow();
+        assertThat(foundMember.getStatus()).isEqualTo(MemberStatus.SUSPENDED);
+    }
+    
+    @Test
+    @DisplayName("존재하지 않는 회원을 정지시키면 실패한다")
+    void suspendFailsWhenMemberNotFound() {
+        // given
+        MemberSuspendRequest request = new MemberSuspendRequest(1L);
+        // then
+        assertThatThrownBy(() -> memberRegister.suspend(request))
+                .isInstanceOf(MemberNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("ACTIVE 아닌 회원을 정지시키면 실패한다")
+    void suspendFailsWhenNotActive() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.suspend();
+        Member savedMember = memberRepository.save(member);
+        MemberSuspendRequest request = new MemberSuspendRequest(savedMember.getId());
+        // then
+        assertThatThrownBy(() -> memberRegister.suspend(request))
+                .isInstanceOf(MemberStatusException.class);
+    }
+
+    @Test
+    @DisplayName("관리자가 정지 상태의 회원을 탈퇴 처리한다")
+    void withdrawByAdmin() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.suspend();
+        Member savedMember = memberRepository.save(member);
+        MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(savedMember.getId());
+        // when
+        memberRegister.withdrawByAdmin(request);
+        // then
+        Member foundMember = memberRepository.findById(savedMember.getId()).orElseThrow();
+        assertThat(foundMember.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 회원을 관리자가 탈퇴 처리하면 실패한다")
+    void withdrawByAdminFailsWhenMemberNotFound() {
+        // given
+        MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(1L);
+        // then
+        assertThatThrownBy(() -> memberRegister.withdrawByAdmin(request))
+                .isInstanceOf(MemberNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("SUSPENDED 아닌 회원을 관리자가 탈퇴 처리하면 실패한다")
+    void withdrawByAdminFailsWhenNotSuspended() {
+        // given
+        Member member = MemberFixture.createMember();
+        Member savedMember = memberRepository.save(member);
+        MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(savedMember.getId());
+        // then
+        assertThatThrownBy(() -> memberRegister.withdrawByAdmin(request))
+                .isInstanceOf(MemberStatusException.class);
+    }
 }

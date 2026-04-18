@@ -1,8 +1,6 @@
 package com.sungho.letterpick.member.application;
 
-import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
-import com.sungho.letterpick.member.application.provided.MemberRegister;
-import com.sungho.letterpick.member.application.provided.MemberRegisterRequest;
+import com.sungho.letterpick.member.application.provided.*;
 import com.sungho.letterpick.member.application.required.MemberRepository;
 import com.sungho.letterpick.member.domain.Email;
 import com.sungho.letterpick.member.domain.Member;
@@ -42,8 +40,7 @@ public class MemberModifyService implements MemberRegister {
 
     @Override
     public void changeNickname(MemberNicknameChangeRequest request) {
-        Member member = memberRepository.findById(request.memberId())
-                .orElseThrow(MemberNotFoundException::new);
+        Member member = findMember(request.memberId());
 
         Nickname nickname = new Nickname(request.nickname());
 
@@ -59,8 +56,24 @@ public class MemberModifyService implements MemberRegister {
 
     @Override
     public void withdraw(Long requesterId) {
-        Member member = memberRepository.findById(requesterId)
-                .orElseThrow(MemberNotFoundException::new);
+        Member member = findMember(requesterId);
         member.withdraw();
+    }
+
+    @Override
+    public void suspend(MemberSuspendRequest request) {
+        Member member = findMember(request.memberId());
+        member.suspend();
+    }
+
+    @Override
+    public void withdrawByAdmin(MemberWithdrawByAdminRequest request) {
+        Member member = findMember(request.memberId());
+        member.withdrawByAdmin();
+    }
+
+    private Member findMember(Long requesterId) {
+        return memberRepository.findById(requesterId)
+                .orElseThrow(MemberNotFoundException::new);
     }
 }
