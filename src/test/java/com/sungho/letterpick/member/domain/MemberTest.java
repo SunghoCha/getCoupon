@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.domain;
 
+import com.sungho.letterpick.member.domain.exception.MemberStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -51,7 +52,18 @@ class MemberTest {
         member.suspend();
         // then
         assertThatThrownBy(() -> {member.changeNickname(new Nickname("수정된닉네임"));
-        }).isInstanceOf(IllegalStateException.class);
+        }).isInstanceOf(MemberStatusException.class);
+    }
+
+    @Test
+    @DisplayName("DEACTIVATED 회원이 닉네임 변경하면 실패한다")
+    void changeNicknameFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(() -> member.changeNickname(new Nickname("수정된닉네임"))).isInstanceOf(MemberStatusException.class);
+
     }
 
     @Test
@@ -74,41 +86,51 @@ class MemberTest {
         member.suspend();
         // then
         assertThatThrownBy(member::suspend)
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(MemberStatusException.class);
 
     }
 
     @Test
-    @DisplayName("ACTIVE 회원이 본인 ID로 탈퇴하면 DEACTIVATED가 된다")
-    void withdrawByOwner() {
+    @DisplayName("DEACTIVATED 회원을 정지하면 실패한다")
+    void suspendFailsWhenDeactivated() {
         // given
-        Member member = MemberFixture.createMember(1L);
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(member::suspend).isInstanceOf(MemberStatusException.class);
+    }
+
+    @Test
+    @DisplayName("ACTIVE 회원이 탈퇴하면 DEACTIVATED가 된다")
+    void withdrawWhenActive() {
+        // given
+        Member member = MemberFixture.createMember();
         // when
-        member.withdraw(1L);
+        member.withdraw();
         // then
         assertThat(member.getStatus()).isEqualTo(MemberStatus.DEACTIVATED);
     }
 
+
     @Test
-    @DisplayName("본인이 아닌 ID로 탈퇴하면 실패한다")
-    void withdrawFailsWhenNotOwner() {
+    @DisplayName("ACTIVE가 아닌 상태에서 탈퇴하면 실패한다")
+    void withdrawFailsWhenNotActive() {
         // given
-        Member member = MemberFixture.createMember(1L);
+        Member member = MemberFixture.createMember();
+        member.suspend();
         // then
-        assertThatThrownBy(() -> member.withdraw(99L))
-                .isInstanceOf(IllegalArgumentException.class);
-        
+        assertThatThrownBy(member::withdraw)
+                .isInstanceOf(MemberStatusException .class);
     }
 
     @Test
-    @DisplayName("ACTIVE가 아닌 상태에서 본인 탈퇴하면 실패한다")
-    void withdrawFailsWhenNotActive() {
+    @DisplayName("DEACTIVATED 회원이 탈퇴하면 실패한다")
+    void withdrawFailsWhenDeactivated() {
         // given
-        Member member = MemberFixture.createMember(1L);
-        member.suspend();
+        Member member = MemberFixture.createMember();
+        member.withdraw();
         // then
-        assertThatThrownBy(() -> member.withdraw(1L))
-                .isInstanceOf(IllegalStateException .class);
+        assertThatThrownBy(member::withdraw).isInstanceOf(MemberStatusException.class);
     }
 
     @Test
@@ -129,7 +151,16 @@ class MemberTest {
         // given
         Member member = MemberFixture.createMember();
         // then
-        assertThatThrownBy(member::withdrawByAdmin).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(member::withdrawByAdmin).isInstanceOf(MemberStatusException.class);
+    }
 
+    @Test
+    @DisplayName("DEACTIVATED 회원을 관리자가 탈퇴 처리하면 실패한다")
+    void withdrawByAdminFailsWhenDeactivated() {
+        // given
+        Member member = MemberFixture.createMember();
+        member.withdraw();
+        // then
+        assertThatThrownBy(member::withdrawByAdmin).isInstanceOf(MemberStatusException.class);
     }
 }

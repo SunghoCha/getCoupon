@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.sungho.letterpick.member.domain.exception.MemberStatusException;
+
 import static java.util.Objects.requireNonNull;
 
 @Getter
@@ -48,34 +50,34 @@ public class Member {
     }
 
     public void changeNickname(Nickname nickname) {
-        if (this.status != MemberStatus.ACTIVE) { // TODO : 커스텀예외
-            throw new IllegalStateException("ACTIVE 회원만 닉네임을 변경할 수 있습니다.");
-        }
+        ensureCanChangeNickname();
         this.nickname = requireNonNull(nickname);
     }
 
     public void suspend() {
-        if (this.status != MemberStatus.ACTIVE) { // TODO : 커스텀예외
-            throw new IllegalStateException("ACTIVE 상태에서만 정지할 수 있습니다.");
+        if (this.status != MemberStatus.ACTIVE) {
+            throw new MemberStatusException();
         }
         this.status = MemberStatus.SUSPENDED;
     }
 
-    public void withdraw(Long requesterId) {
-        requireNonNull(requesterId);
-        if (!this.id.equals(requesterId)) { // TODO : 커스텀예외 필요. 권한 이슈
-            throw new IllegalArgumentException("본인만 탈퇴할 수 있습니다.");
-        }
+    public void withdraw() {
         if (this.status != MemberStatus.ACTIVE) {
-            throw new IllegalStateException("ACTIVE 상태에서만 탈퇴할 수 있습니다.");
+            throw new MemberStatusException();
         }
         this.status = MemberStatus.DEACTIVATED;
     }
 
     public void withdrawByAdmin() {
         if (this.status != MemberStatus.SUSPENDED) {
-            throw new IllegalStateException("SUSPENDED 상태에서만 관리자 탈퇴 처리할 수 있습니다.");
+            throw new MemberStatusException();
         }
         this.status = MemberStatus.DEACTIVATED;
+    }
+
+    public void ensureCanChangeNickname() {
+        if (this.status != MemberStatus.ACTIVE) {
+            throw new MemberStatusException();
+        }
     }
 }
