@@ -1,17 +1,17 @@
 package com.sungho.letterpick.common.exception;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record ErrorResponse(
         String code,
         String message,
-        LocalDateTime timestamp
+        Instant timestamp
 ) {
     public static ErrorResponse of(BusinessException exception) {
         return new ErrorResponse(
                 exception.getErrorCode().getCode(),
                 exception.getMessage(),
-                LocalDateTime.now()
+                Instant.now()
         );
     }
 }

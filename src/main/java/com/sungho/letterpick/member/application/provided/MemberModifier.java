@@ -5,7 +5,7 @@ import com.sungho.letterpick.member.domain.Member;
 public interface MemberModifier {
     Member register(MemberRegisterRequest request);
 
-    void changeNickname(MemberNicknameChangeRequest request);
+    void changeNickname(Long memberId, MemberNicknameChangeRequest request);
 
     void withdraw(Long requesterId);
 
