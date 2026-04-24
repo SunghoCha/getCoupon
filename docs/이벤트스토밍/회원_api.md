@@ -59,9 +59,16 @@
 | 2 | 회원 정보 수정 | ✅ 완료 (2026-04-24) |
 | 3 | 회원 정지 | ✅ 완료 (2026-04-24) |
 | 4 | 관리자 탈퇴 처리 | ✅ 완료 (2026-04-24) |
-| 5 | 통합 스모크 + OpenAPI 검증 | ⏳ 대기 |
+| 5 | 통합 스모크 + OpenAPI 검증 | ✅ 완료 (2026-04-25) |
 
 각 UC의 Red/Green 세부 진행은 해당 UC B 블록에 기록한다.
+
+**Phase 5. 통합 스모크 + OpenAPI 검증** (유스케이스 횡단)
+- [x] 로컬 개발용 MySQL 환경 구성 (docker-compose + local profile) — 앱을 실제 DB로 기동해 수동 확인 가능
+- [x] 통합 테스트 작성 — 대표 성공 경로 4건 (`@SpringBootTest` + Testcontainers + 실제 DB 왕복 + 상태 변화 검증)
+- [x] OpenAPI 스펙 자동 검증 — 4개 엔드포인트 path 존재 확인 (`MemberControllerIntegrationTest#openapi_spec_includes_member_endpoints`)
+- [x] 수동 확인 — `/v3/api-docs` 응답과 회원_api.md 외부 계약 일치 (HTTP 메서드·응답 코드 전체)
+- [ ] 9단계 FINAL 승격 및 `#5 OpenAPI 동기화` 섹션 확정 (별도 단계)
 
 ---
 
@@ -450,6 +457,7 @@ Content-Type: application/json
 |------|------|---------------|-----------|---------------|-------------------|
 | 2026-04-21 | 2단계 | — | 문서 골격 생성 (DRAFT) | N | 공유 전 |
 | 2026-04-24 | 8단계 | 1·2·3·4 | Phase 1~4 컨트롤러 구현 완료. Phase 3·4는 `@PreAuthorize("hasAuthority('ROLE_ADMIN')")` 적용 | N | 공유 전 |
+| 2026-04-25 | 8단계 | — | Phase 5 완료 — 통합 스모크 4건 + OpenAPI 자동 검증 1건. 로컬 개발용 MySQL 환경 추가 | N | 공유 전 |
 
 ---
 
