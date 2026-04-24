@@ -80,9 +80,9 @@ class MemberModifierTest {
         // given
         Member member = MemberFixture.createMember();
         Member savedMember = memberRepository.save(member);
-        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(savedMember.getId(), "수정된닉네임");
+        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest("수정된닉네임");
         // when
-        memberModifier.changeNickname(request);
+        memberModifier.changeNickname(savedMember.getId(), request);
 
         // then
         Member changedMember = memberRepository.findById(savedMember.getId()).orElseThrow();
@@ -94,9 +94,9 @@ class MemberModifierTest {
     @DisplayName("존재하지 않는 회원의 닉네임을 변경하면 실패한다")
     void changeNicknameFailsWhenMemberNotFound() {
         // given
-        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(1L, "수정된닉네임");
+        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest("수정된닉네임");
         // then
-        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(1L, request))
                 .isInstanceOf(MemberNotFoundException.class);
 
     }
@@ -107,9 +107,9 @@ class MemberModifierTest {
         // given
         Member member = memberRepository.save(MemberFixture.createMember("test1@email.com", "닉네임1"));
         Member otherMember = memberRepository.save(MemberFixture.createMember("test2@email.com", "닉네임2"));
-        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(otherMember.getId(), member.getNickname().name());
+        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(member.getNickname().name());
         // then
-        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(otherMember.getId(), request))
                 .isInstanceOf(DuplicateNicknameException.class);
 
     }
@@ -119,9 +119,9 @@ class MemberModifierTest {
     void changeNicknameKeepsWhenSameNickname() {
         // given
         Member member = memberRepository.save(MemberFixture.createMember("test1@email.com", "닉네임1"));
-        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(member.getId(), member.getNickname().name());
+        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest(member.getNickname().name());
         // when
-        memberModifier.changeNickname(request);
+        memberModifier.changeNickname(member.getId(), request);
         // then
         Member savedMember = memberRepository.findById(member.getId()).orElseThrow();
         assertThat(savedMember.getNickname()).isEqualTo(member.getNickname());
@@ -136,9 +136,9 @@ class MemberModifierTest {
         member.suspend();
         Member savedMember = memberRepository.save(member);
         MemberNicknameChangeRequest request =
-                new MemberNicknameChangeRequest(savedMember.getId(), "새로운닉네임");
+                new MemberNicknameChangeRequest("새로운닉네임");
         // then
-        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(savedMember.getId(), request))
                 .isInstanceOf(MemberStatusException.class);
     }
 
@@ -150,9 +150,9 @@ class MemberModifierTest {
         member.withdraw();
         Member savedMember = memberRepository.save(member);
         MemberNicknameChangeRequest request =
-                new MemberNicknameChangeRequest(savedMember.getId(), "새로운닉네임");
+                new MemberNicknameChangeRequest("새로운닉네임");
         // then
-        assertThatThrownBy(() -> memberModifier.changeNickname(request))
+        assertThatThrownBy(() -> memberModifier.changeNickname(savedMember.getId(), request))
                 .isInstanceOf(MemberStatusException.class);
     }
 

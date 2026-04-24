@@ -1,4 +1,6 @@
 package com.sungho.letterpick.member.application.provided;
 
-public record MemberSuspendRequest(Long memberId) {
+import jakarta.validation.constraints.NotNull;
+
+public record MemberSuspendRequest(@NotNull Long memberId) {
 }

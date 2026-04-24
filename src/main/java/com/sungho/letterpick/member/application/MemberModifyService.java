@@ -39,8 +39,8 @@ public class MemberModifyService implements MemberModifier {
     }
 
     @Override
-    public void changeNickname(MemberNicknameChangeRequest request) {
-        Member member = findMember(request.memberId());
+    public void changeNickname(Long memberId, MemberNicknameChangeRequest request) {
+        Member member = findMember(memberId);
         member.ensureCanChangeNickname();
         Nickname nickname = new Nickname(request.nickname());
 
