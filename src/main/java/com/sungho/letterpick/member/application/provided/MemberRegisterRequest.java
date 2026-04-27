@@ -1,4 +1,11 @@
 package com.sungho.letterpick.member.application.provided;
 
-public record MemberRegisterRequest(String email, String nickname) {
+import com.sungho.letterpick.common.auth.SocialProvider;
+
+public record MemberRegisterRequest(
+        String email,
+        String nickname,
+        SocialProvider socialProvider,
+        String socialProviderId
+) {
 }

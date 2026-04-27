@@ -1,31 +1,105 @@
 package com.sungho.letterpick.common.config;
 
 import com.sungho.letterpick.common.exception.ErrorResponse;
+import com.sungho.letterpick.member.adapter.security.CustomOAuth2UserService;
+import com.sungho.letterpick.member.adapter.security.CustomOidcUserService;
+import com.sungho.letterpick.member.adapter.security.OAuth2LoginFailureHandler;
+import com.sungho.letterpick.member.adapter.security.OAuth2LoginSuccessHandler;
 import java.time.Instant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(proxyTargetClass = true)
 public class SecurityConfig {
 
+    /**
+     * /api/** 전용 체인.
+     * - JSON 401/403 응답
+     * - oauth2Login 없음 (브라우저 redirect 흐름 분리)
+     * - 세션 쿠키로 OAuth 체인이 저장한 인증 정보 공유
+     */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AccessDeniedHandler accessDeniedHandler) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiSecurityFilterChain(
+            HttpSecurity http,
+            AccessDeniedHandler accessDeniedHandler,
+            AuthenticationEntryPoint apiAuthenticationEntryPoint
+    ) throws Exception {
+        CsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
+
         http
+                .securityMatcher("/api/**")
+                // TODO: 로그인 직후 프론트가 CSRF 토큰을 다시 확보할 수 있도록 /api/csrf 같은 엔드포인트 필요 여부 결정.
+                // TODO: 프론트/백엔드 도메인이 다르면 CORS allowCredentials와 허용 origin을 명시.
+                // TODO: 배포 환경 기준으로 세션 쿠키 SameSite/Secure 설정 확정.
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(csrfTokenRequestHandler)
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/auth/signup").hasAuthority("ROLE_PENDING_SIGNUP")
+                        .requestMatchers("/api/v1/members/**").hasAuthority("ROLE_USER")
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(e -> e
+                        .accessDeniedHandler(accessDeniedHandler)
+                        .authenticationEntryPoint(apiAuthenticationEntryPoint)
+                );
+        return http.build();
+    }
+
+    /**
+     * OAuth 로그인 진입 전용 체인.
+     * - 브라우저 redirect 흐름
+     * - 로그인 성공 시 세션에 Authentication 저장 -> 이후 /api/** 호출이 세션 읽음
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain oauthSecurityFilterChain(
+            HttpSecurity http,
+            CustomOidcUserService customOidcUserService,
+            CustomOAuth2UserService customOAuth2UserService,
+            OAuth2LoginFailureHandler oAuth2LoginFailureHandler,
+            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+    ) throws Exception {
+        http
+                .securityMatcher("/oauth2/**", "/login/oauth2/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .exceptionHandling(e -> e.accessDeniedHandler(accessDeniedHandler));
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .oidcUserService(customOidcUserService)
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
+                );
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationEntryPoint apiAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        return (request, response, ex) -> {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+            ErrorResponse body = new ErrorResponse("UNAUTHORIZED", "인증이 필요합니다", Instant.now());
+            objectMapper.writeValue(response.getWriter(), body);
+        };
     }
 
     @Bean

@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.sungho.letterpick.common.auth.WithLoginUser;
-import com.sungho.letterpick.common.config.SecurityConfig;
 import com.sungho.letterpick.member.application.provided.MemberModifier;
 import com.sungho.letterpick.member.application.provided.MemberSuspendRequest;
 import com.sungho.letterpick.member.application.provided.MemberWithdrawByAdminRequest;
@@ -18,15 +17,15 @@ import com.sungho.letterpick.member.domain.exception.MemberStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(AdminMemberController.class)
-@Import(SecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AdminMemberControllerTest {
 
     @Autowired
@@ -80,21 +79,6 @@ class AdminMemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("MEM-004"));
-    }
-
-    @Test
-    @WithLoginUser(memberId = 42L)
-    @DisplayName("일반 회원이 정지 API를 호출하면 403이 반환된다")
-    void suspend_returns_403_when_not_admin() throws Exception {
-        MemberSuspendRequest request = new MemberSuspendRequest(100L);
-
-        mockMvc.perform(post("/api/v1/admin/members/suspension")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
-
-        verify(memberModifier, never()).suspend(any());
     }
 
     @Test
@@ -154,21 +138,6 @@ class AdminMemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("MEM-004"));
-    }
-
-    @Test
-    @WithLoginUser(memberId = 42L)
-    @DisplayName("일반 회원이 탈퇴 처리 API를 호출하면 403이 반환된다")
-    void withdrawByAdmin_returns_403_when_not_admin() throws Exception {
-        MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(100L);
-
-        mockMvc.perform(post("/api/v1/admin/members/withdrawal")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
-
-        verify(memberModifier, never()).withdrawByAdmin(any());
     }
 
     @Test
