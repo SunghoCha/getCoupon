@@ -6,7 +6,6 @@ import com.sungho.letterpick.member.application.provided.MemberWithdrawByAdminRe
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +22,6 @@ public class AdminMemberController implements AdminMemberControllerApi {
     @Override
     @PostMapping("/suspension")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public void suspend(@Valid @RequestBody MemberSuspendRequest request) {
         memberModifier.suspend(request);
     }
@@ -31,7 +29,6 @@ public class AdminMemberController implements AdminMemberControllerApi {
     @Override
     @PostMapping("/withdrawal")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public void withdrawByAdmin(@Valid @RequestBody MemberWithdrawByAdminRequest request) {
         memberModifier.withdrawByAdmin(request);
     }

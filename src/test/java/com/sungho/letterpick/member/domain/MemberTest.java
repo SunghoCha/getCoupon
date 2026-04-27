@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.domain;
 
+import com.sungho.letterpick.common.auth.SocialProvider;
 import com.sungho.letterpick.member.domain.exception.MemberStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,8 @@ class MemberTest {
         // when
         Member member = Member.register(
                 new Email("test@example.com"),
-                new Nickname("테스트유저"));
+                new Nickname("테스트유저"),
+                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"));
         // then
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
     }
@@ -26,7 +28,8 @@ class MemberTest {
         // when
         Member member = Member.register(
                 new Email("test@example.com"),
-                new Nickname("테스트유저"));
+                new Nickname("테스트유저"),
+                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"));
 
         // then
         assertThat(member.getEmail()).isEqualTo(new Email("test@example.com"));

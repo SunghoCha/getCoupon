@@ -21,17 +21,14 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
             WebDataBinderFactory binderFactory) {
-        // TODO : 커스텀 예외
+        // 인증 보장은 SecurityFilterChain의 책임. 여기서는 SocialPrincipal에서 memberId만 추출한다.
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new IllegalStateException("인증되지 않은 요청");
-        }
         Object principal = auth.getPrincipal();
-        if (!(principal instanceof LoginUser loginUser)) {
-            throw new IllegalStateException(
-                    "Principal이 LoginUser 타입이 아님: "
-                            + (principal == null ? "null" : principal.getClass().getSimpleName()));
+        if (principal instanceof SocialPrincipal social && !social.isPending()) {
+            return new LoginUser(social.getMember().getId());
         }
-        return loginUser;
+        throw new IllegalStateException(
+                "Principal이 가입 완료된 SocialPrincipal이 아님: "
+                        + (principal == null ? "null" : principal.getClass().getSimpleName()));
     }
 }

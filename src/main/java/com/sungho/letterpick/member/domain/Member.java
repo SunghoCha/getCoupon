@@ -16,7 +16,9 @@ import static java.util.Objects.requireNonNull;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "member", uniqueConstraints = {
         @UniqueConstraint(name = "uk_member_email", columnNames = "email"),
-        @UniqueConstraint(name = "uk_member_nickname", columnNames = "nickname")
+        @UniqueConstraint(name = "uk_member_nickname", columnNames = "nickname"),
+        @UniqueConstraint(name = "uk_member_social_identity",
+                columnNames = {"social_provider", "social_provider_id"})
 })
 public class Member {
 
@@ -30,6 +32,15 @@ public class Member {
     private Email email;
 
     @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "socialProvider",
+                    column = @Column(name = "social_provider", nullable = false, length = 20)),
+            @AttributeOverride(name = "socialProviderId",
+                    column = @Column(name = "social_provider_id", nullable = false, length = 100))
+    })
+    private SocialIdentity socialIdentity;
+
+    @Embedded
     @AttributeOverride(name = "name",
             column = @Column(name = "nickname", nullable = false))
     private Nickname nickname;
@@ -39,14 +50,15 @@ public class Member {
     @Column(nullable = false, length = 20)
     private MemberStatus status;
 
-    private Member(Email email, Nickname nickname) {
+    private Member(Email email, Nickname nickname, SocialIdentity socialIdentity) {
         this.email = requireNonNull(email);
         this.nickname = requireNonNull(nickname);
+        this.socialIdentity = requireNonNull(socialIdentity);
         this.status = MemberStatus.ACTIVE;
     }
 
-    public static Member register(Email email, Nickname nickname) {
-        return new Member(email, nickname);
+    public static Member register(Email email, Nickname nickname, SocialIdentity socialIdentity) {
+        return new Member(email, nickname, socialIdentity);
     }
 
     public void changeNickname(Nickname nickname) {
@@ -79,5 +91,9 @@ public class Member {
         if (this.status != MemberStatus.ACTIVE) {
             throw new MemberStatusException();
         }
+    }
+
+    public boolean canLogin() {
+        return this.status == MemberStatus.ACTIVE;
     }
 }

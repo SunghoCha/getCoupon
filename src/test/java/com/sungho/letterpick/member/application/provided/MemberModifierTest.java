@@ -1,6 +1,8 @@
 package com.sungho.letterpick.member.application.provided;
 
 import com.sungho.letterpick.LetterPickTestConfiguration;
+import com.sungho.letterpick.common.auth.SocialProvider;
+import com.sungho.letterpick.member.application.MemberModifyService;
 import com.sungho.letterpick.member.application.required.MemberRepository;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.MemberFixture;
@@ -11,22 +13,26 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@Import(LetterPickTestConfiguration.class)
+@DataJpaTest
+@ActiveProfiles("test")
+@Import({LetterPickTestConfiguration.class, MemberModifyService.class})
 class MemberModifierTest {
 
     @Autowired
     MemberModifier memberModifier;
+
     @Autowired
     private MemberRepository memberRepository;
 
-    @AfterEach
+    @AfterEach // 제거 가능할듯
     void cleanUp() {
         memberRepository.deleteAllInBatch();
     }
@@ -35,7 +41,8 @@ class MemberModifierTest {
     @DisplayName("회원 가입이 정상적으로 이루어진다")
     void register() {
         // given
-        MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
+        MemberRegisterRequest request = new MemberRegisterRequest(
+                "email@test.com", "nickname", SocialProvider.GOOGLE, "google-sub-1");
         // when
         Member member = memberModifier.register(request);
         // then
@@ -43,29 +50,30 @@ class MemberModifierTest {
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
         assertThat(member.getEmail().address()).isEqualTo("email@test.com");
         assertThat(member.getNickname().name()).isEqualTo("nickname");
-
     }
 
     @Test
     @DisplayName("회원 가입 시 이메일이 중복이면 실패한다")
     void registerFailsWhenEmailDuplicated() {
         // given
-        MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
-        MemberRegisterRequest otherRequest = new MemberRegisterRequest("email@test.com", "other");
+        MemberRegisterRequest request = new MemberRegisterRequest(
+                "email@test.com", "nickname", SocialProvider.GOOGLE, "google-sub-1");
+        MemberRegisterRequest otherRequest = new MemberRegisterRequest(
+                "email@test.com", "other", SocialProvider.GOOGLE, "google-sub-2");
         memberModifier.register(request);
         // then
         assertThatThrownBy(() -> memberModifier.register(otherRequest))
                 .isInstanceOf(DuplicateEmailException.class);
-
     }
-
 
     @Test
     @DisplayName("회원 가입 시 닉네임이 중복이면 실패한다")
     void registerFailsWhenNicknameDuplicated() {
         // given
-        MemberRegisterRequest request = new MemberRegisterRequest("email@test.com", "nickname");
-        MemberRegisterRequest otherRequest = new MemberRegisterRequest("other@test.com", "nickname");
+        MemberRegisterRequest request = new MemberRegisterRequest(
+                "email@test.com", "nickname", SocialProvider.GOOGLE, "google-sub-1");
+        MemberRegisterRequest otherRequest = new MemberRegisterRequest(
+                "other@test.com", "nickname", SocialProvider.GOOGLE, "google-sub-2");
         // when
         memberModifier.register(request);
         // then

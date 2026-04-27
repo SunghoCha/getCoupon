@@ -1,5 +1,26 @@
 package com.sungho.letterpick.member.adapter.webapi;
 
+import com.sungho.letterpick.common.auth.WithLoginUser;
+import com.sungho.letterpick.common.config.WebMvcConfig;
+import com.sungho.letterpick.member.application.provided.MemberModifier;
+import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
+import com.sungho.letterpick.member.domain.exception.DuplicateNicknameException;
+import com.sungho.letterpick.member.domain.exception.MemberNotFoundException;
+import com.sungho.letterpick.member.domain.exception.MemberStatusException;
+import java.sql.SQLException;
+import org.hibernate.exception.ConstraintViolationException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -7,26 +28,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.sungho.letterpick.common.auth.WithLoginUser;
-import tools.jackson.databind.ObjectMapper;
-import com.sungho.letterpick.common.config.SecurityConfig;
-import com.sungho.letterpick.common.config.WebMvcConfig;
-import com.sungho.letterpick.member.application.provided.MemberModifier;
-import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
-import com.sungho.letterpick.member.domain.exception.DuplicateNicknameException;
-import com.sungho.letterpick.member.domain.exception.MemberNotFoundException;
-import com.sungho.letterpick.member.domain.exception.MemberStatusException;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
 @WebMvcTest(MemberController.class)
-@Import({WebMvcConfig.class, SecurityConfig.class})
+@AutoConfigureMockMvc(addFilters = false)
+@Import(WebMvcConfig.class)
 class MemberControllerTest {
 
     @Autowired
@@ -116,6 +120,21 @@ class MemberControllerTest {
 
     @Test
     @WithLoginUser(memberId = 42L)
+    @DisplayName("닉네임 변경 중 nickname unique constraint 충돌 시 409")
+    void changeNickname_returns_409_when_nickname_unique_constraint_violated() throws Exception {
+        MemberNicknameChangeRequest request = new MemberNicknameChangeRequest("중복닉네임");
+        doThrow(dataIntegrityViolation("uk_member_nickname"))
+                .when(memberModifier).changeNickname(42L, request);
+
+        mockMvc.perform(patch("/api/v1/members/me")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("MEM-002"));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
     @DisplayName("닉네임 변경 시 허용되지 않는 상태이면 409가 반환된다")
     void changeNickname_returns_409_when_status_violation() throws Exception {
         MemberNicknameChangeRequest request = new MemberNicknameChangeRequest("새닉네임");
@@ -140,5 +159,16 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    private DataIntegrityViolationException dataIntegrityViolation(String constraintName) {
+        return new DataIntegrityViolationException(
+                "Unique constraint violation",
+                new ConstraintViolationException(
+                        "Unique constraint violation",
+                        new SQLException("constraint violation"),
+                        constraintName
+                )
+        );
     }
 }

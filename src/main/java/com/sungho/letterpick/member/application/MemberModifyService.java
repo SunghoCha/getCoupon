@@ -5,6 +5,7 @@ import com.sungho.letterpick.member.application.required.MemberRepository;
 import com.sungho.letterpick.member.domain.Email;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.Nickname;
+import com.sungho.letterpick.member.domain.SocialIdentity;
 import com.sungho.letterpick.member.domain.exception.DuplicateEmailException;
 import com.sungho.letterpick.member.domain.exception.DuplicateNicknameException;
 import com.sungho.letterpick.member.domain.exception.MemberNotFoundException;
@@ -25,6 +26,8 @@ public class MemberModifyService implements MemberModifier {
     public Member register(MemberRegisterRequest request) {
         Email email = new Email(request.email());
         Nickname nickname = new Nickname(request.nickname());
+        SocialIdentity socialIdentity = new SocialIdentity(request.socialProvider(), request.socialProviderId());
+
         // TODO: race condition — exists 검증과 commit 사이 동시성 문제. 현재는 DB UNIQUE 제약이 최종 방어.
         //       HTTP 도입 시 @ControllerAdvice에서 DataIntegrityViolationException → Duplicate…Exception 으로 번역할 것.
         if (memberRepository.existsByEmail(email)) {
@@ -34,7 +37,7 @@ public class MemberModifyService implements MemberModifier {
             throw new DuplicateNicknameException();
         }
 
-        Member member = Member.register(email, nickname);
+        Member member = Member.register(email, nickname, socialIdentity);
         return memberRepository.save(member);
     }
 
