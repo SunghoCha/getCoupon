@@ -9,6 +9,7 @@ import java.time.Instant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,6 +25,11 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final String[] PUBLIC_GET_ENDPOINTS = {
+            "/api/v1/newsletters",
+            "/api/v1/newsletters/categories"
+    };
 
     /**
      * /api/** 전용 체인.
@@ -51,6 +57,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/auth/signup").hasAuthority("ROLE_PENDING_SIGNUP")
                         .requestMatchers("/api/v1/members/**").hasAuthority("ROLE_USER")
                         .anyRequest().authenticated()
