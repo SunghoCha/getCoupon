@@ -1,6 +1,7 @@
 package com.sungho.letterpick.member.adapter.webapi;
 
 import com.sungho.letterpick.common.auth.LoginUser;
+import com.sungho.letterpick.member.adapter.webapi.dto.MemberResponse;
 import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,6 +10,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Member", description = "회원 관련 API")
 public interface MemberControllerApi {
+
+    @Operation(
+            summary = "내 정보 조회",
+            description = "로그인한 회원이 앱 초기화와 화면 표시용 자신의 기본 정보를 조회한다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "회원을 찾을 수 없음")
+    })
+    MemberResponse findMember(LoginUser loginUser);
 
     @Operation(
             summary = "본인 탈퇴",

@@ -12,6 +12,7 @@ import com.sungho.letterpick.member.adapter.security.CustomOAuth2UserService;
 import com.sungho.letterpick.member.adapter.security.CustomOidcUserService;
 import com.sungho.letterpick.member.adapter.security.OAuth2LoginFailureHandler;
 import com.sungho.letterpick.member.adapter.security.OAuth2LoginSuccessHandler;
+import com.sungho.letterpick.member.application.provided.MemberFinder;
 import com.sungho.letterpick.member.application.provided.MemberModifier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class MemberControllerSecurityTest {
 
     @MockitoBean
     MemberModifier memberModifier;
+
+    @MockitoBean
+    MemberFinder memberFinder;
 
     @MockitoBean
     CustomOidcUserService customOidcUserService;

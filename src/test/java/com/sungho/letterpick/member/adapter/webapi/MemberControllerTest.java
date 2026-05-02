@@ -2,8 +2,11 @@ package com.sungho.letterpick.member.adapter.webapi;
 
 import com.sungho.letterpick.common.auth.WithLoginUser;
 import com.sungho.letterpick.common.config.WebMvcConfig;
+import com.sungho.letterpick.member.application.provided.MemberFinder;
 import com.sungho.letterpick.member.application.provided.MemberModifier;
 import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
+import com.sungho.letterpick.member.application.provided.MemberView;
+import com.sungho.letterpick.member.domain.MemberStatus;
 import com.sungho.letterpick.member.domain.exception.DuplicateNicknameException;
 import com.sungho.letterpick.member.domain.exception.MemberNotFoundException;
 import com.sungho.letterpick.member.domain.exception.MemberStatusException;
@@ -21,9 +24,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,6 +46,44 @@ class MemberControllerTest {
 
     @MockitoBean
     MemberModifier memberModifier;
+
+    @MockitoBean
+    MemberFinder memberFinder;
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("GET /api/v1/members/me 요청 시 200과 회원 기본 정보가 반환된다")
+    void findMember_returns_200_and_member_information() throws Exception {
+        MemberView memberView = new MemberView(
+                42L,
+                "member@example.com",
+                "새닉네임",
+                MemberStatus.ACTIVE,
+                "k8x3p9q2m4z1@letterpick.com"
+        );
+        given(memberFinder.findMember(42L)).willReturn(memberView);
+
+        mockMvc.perform(get("/api/v1/members/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberId").value(42L))
+                .andExpect(jsonPath("$.email").value("member@example.com"))
+                .andExpect(jsonPath("$.nickname").value("새닉네임"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.newsletterInboxAddress").value("k8x3p9q2m4z1@letterpick.com"));
+
+        verify(memberFinder).findMember(42L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("내 정보 조회 시 회원을 찾지 못하면 404가 반환된다")
+    void findMember_returns_404_when_member_not_found() throws Exception {
+        given(memberFinder.findMember(42L)).willThrow(new MemberNotFoundException());
+
+        mockMvc.perform(get("/api/v1/members/me"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("MEM-003"));
+    }
 
     @Test
     @WithLoginUser(memberId = 42L)

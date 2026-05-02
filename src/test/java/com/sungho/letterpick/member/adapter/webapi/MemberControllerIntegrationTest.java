@@ -14,7 +14,7 @@ import com.sungho.letterpick.common.auth.LoginUser;
 import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
 import com.sungho.letterpick.member.application.provided.MemberSuspendRequest;
 import com.sungho.letterpick.member.application.provided.MemberWithdrawByAdminRequest;
-import com.sungho.letterpick.member.application.required.MemberRepository;
+import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.MemberFixture;
 import com.sungho.letterpick.member.domain.MemberStatus;
