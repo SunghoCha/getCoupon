@@ -29,3 +29,7 @@ spring:
 # 프론트엔드 통합 시점에 운영 URL로 갱신. OAuth 가입/로그인 후 리다이렉트 대상.
 frontend:
   base-url: http://localhost:3000
+
+newsletter:
+  inbox-address:
+    domain: ${NEWSLETTER_INBOX_ADDRESS_DOMAIN:inbound.letterpick.local}

@@ -17,6 +17,7 @@ import static java.util.Objects.requireNonNull;
 @Table(name = "member", uniqueConstraints = {
         @UniqueConstraint(name = "uk_member_email", columnNames = "email"),
         @UniqueConstraint(name = "uk_member_nickname", columnNames = "nickname"),
+        @UniqueConstraint(name = "uk_member_newsletter_inbox_address", columnNames = "newsletter_inbox_address"),
         @UniqueConstraint(name = "uk_member_social_identity",
                 columnNames = {"social_provider", "social_provider_id"})
 })
@@ -45,20 +46,28 @@ public class Member {
             column = @Column(name = "nickname", nullable = false))
     private Nickname nickname;
 
+    @Embedded
+    @AttributeOverride(name = "address",
+            column = @Column(name = "newsletter_inbox_address", nullable = false, length = 254))
+    private NewsletterInboxAddress newsletterInboxAddress;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 20)
     private MemberStatus status;
 
-    private Member(Email email, Nickname nickname, SocialIdentity socialIdentity) {
+    private Member(Email email, Nickname nickname, SocialIdentity socialIdentity,
+                   NewsletterInboxAddress newsletterInboxAddress) {
         this.email = requireNonNull(email);
         this.nickname = requireNonNull(nickname);
         this.socialIdentity = requireNonNull(socialIdentity);
+        this.newsletterInboxAddress = requireNonNull(newsletterInboxAddress);
         this.status = MemberStatus.ACTIVE;
     }
 
-    public static Member register(Email email, Nickname nickname, SocialIdentity socialIdentity) {
-        return new Member(email, nickname, socialIdentity);
+    public static Member register(Email email, Nickname nickname, SocialIdentity socialIdentity,
+                                  NewsletterInboxAddress newsletterInboxAddress) {
+        return new Member(email, nickname, socialIdentity, newsletterInboxAddress);
     }
 
     public void changeNickname(Nickname nickname) {

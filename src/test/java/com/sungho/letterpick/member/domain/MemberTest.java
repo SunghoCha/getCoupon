@@ -17,7 +17,8 @@ class MemberTest {
         Member member = Member.register(
                 new Email("test@example.com"),
                 new Nickname("테스트유저"),
-                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"));
+                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"),
+                new NewsletterInboxAddress("abcd1234efgh@inbound.letterpick.test"));
         // then
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
     }
@@ -29,11 +30,29 @@ class MemberTest {
         Member member = Member.register(
                 new Email("test@example.com"),
                 new Nickname("테스트유저"),
-                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"));
+                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"),
+                new NewsletterInboxAddress("abcd1234efgh@inbound.letterpick.test"));
 
         // then
         assertThat(member.getEmail()).isEqualTo(new Email("test@example.com"));
         assertThat(member.getNickname()).isEqualTo(new Nickname("테스트유저"));
+    }
+
+    @Test
+    @DisplayName("register() 후 newsletterInboxAddress가 세팅된다")
+    void registerSetsNewsletterInboxAddress() {
+        // given
+        NewsletterInboxAddress newsletterInboxAddress =
+                new NewsletterInboxAddress("abcd1234efgh@inbound.letterpick.test");
+        // when
+        Member member = Member.register(
+                new Email("test@example.com"),
+                new Nickname("테스트유저"),
+                new SocialIdentity(SocialProvider.GOOGLE, "google-sub-1"),
+                newsletterInboxAddress);
+
+        // then
+        assertThat(member.getNewsletterInboxAddress()).isEqualTo(newsletterInboxAddress);
     }
 
     @Test

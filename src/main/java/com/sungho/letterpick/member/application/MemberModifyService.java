@@ -1,9 +1,10 @@
 package com.sungho.letterpick.member.application;
 
 import com.sungho.letterpick.member.application.provided.*;
-import com.sungho.letterpick.member.application.required.MemberRepository;
+import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.domain.Email;
 import com.sungho.letterpick.member.domain.Member;
+import com.sungho.letterpick.member.domain.NewsletterInboxAddress;
 import com.sungho.letterpick.member.domain.Nickname;
 import com.sungho.letterpick.member.domain.SocialIdentity;
 import com.sungho.letterpick.member.domain.exception.DuplicateEmailException;
@@ -19,8 +20,10 @@ import java.util.Objects;
 @Transactional
 @RequiredArgsConstructor
 public class MemberModifyService implements MemberModifier {
+    private static final int NEWSLETTER_INBOX_ADDRESS_GENERATION_MAX_ATTEMPTS = 10;
 
     private final MemberRepository memberRepository;
+    private final NewsletterInboxAddressGenerator newsletterInboxAddressGenerator;
 
     @Override
     public Member register(MemberRegisterRequest request) {
@@ -37,7 +40,8 @@ public class MemberModifyService implements MemberModifier {
             throw new DuplicateNicknameException();
         }
 
-        Member member = Member.register(email, nickname, socialIdentity);
+        NewsletterInboxAddress newsletterInboxAddress = generateUniqueNewsletterInboxAddress();
+        Member member = Member.register(email, nickname, socialIdentity, newsletterInboxAddress);
         return memberRepository.save(member);
     }
 
@@ -78,5 +82,16 @@ public class MemberModifyService implements MemberModifier {
     private Member findMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
+    }
+
+    private NewsletterInboxAddress generateUniqueNewsletterInboxAddress() {
+        for (int attempt = 0; attempt < NEWSLETTER_INBOX_ADDRESS_GENERATION_MAX_ATTEMPTS; attempt++) {
+            NewsletterInboxAddress newsletterInboxAddress = newsletterInboxAddressGenerator.generate();
+            if (!memberRepository.existsByNewsletterInboxAddress(newsletterInboxAddress)) {
+                return newsletterInboxAddress;
+            }
+        }
+
+        throw new IllegalStateException("뉴스레터 수신 주소를 생성하지 못했습니다.");
     }
 }

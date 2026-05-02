@@ -13,8 +13,15 @@ public class MemberFixture {
         return Member.register(
                 new Email(email),
                 new Nickname(nickname),
-                new SocialIdentity(SocialProvider.GOOGLE, "google-" + email)
+                new SocialIdentity(SocialProvider.GOOGLE, "google-" + email),
+                newsletterInboxAddress(email)
         );
+    }
+
+    private static NewsletterInboxAddress newsletterInboxAddress(String email) {
+        String token = Integer.toUnsignedString(email.hashCode(), 36);
+        String paddedToken = (token + "000000000000").substring(0, NewsletterInboxAddress.TOKEN_LENGTH);
+        return new NewsletterInboxAddress(paddedToken + "@inbound.letterpick.test");
     }
 
     public static Member createMemberWithId(Long memberId) {

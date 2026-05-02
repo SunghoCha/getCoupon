@@ -1,7 +1,7 @@
 package com.sungho.letterpick.member.application;
 
 import com.sungho.letterpick.member.application.provided.SocialLoginService;
-import com.sungho.letterpick.member.application.required.MemberRepository;
+import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.SocialIdentity;
 import lombok.RequiredArgsConstructor;

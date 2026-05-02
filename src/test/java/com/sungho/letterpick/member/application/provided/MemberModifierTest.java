@@ -3,7 +3,8 @@ package com.sungho.letterpick.member.application.provided;
 import com.sungho.letterpick.LetterPickTestConfiguration;
 import com.sungho.letterpick.common.auth.SocialProvider;
 import com.sungho.letterpick.member.application.MemberModifyService;
-import com.sungho.letterpick.member.application.required.MemberRepository;
+import com.sungho.letterpick.member.application.NewsletterInboxAddressGenerator;
+import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.MemberFixture;
 import com.sungho.letterpick.member.domain.MemberStatus;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -23,7 +23,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import({LetterPickTestConfiguration.class, MemberModifyService.class})
+@Import({LetterPickTestConfiguration.class, MemberModifyService.class,
+        NewsletterInboxAddressGenerator.class})
 class MemberModifierTest {
 
     @Autowired
@@ -50,6 +51,8 @@ class MemberModifierTest {
         assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
         assertThat(member.getEmail().address()).isEqualTo("email@test.com");
         assertThat(member.getNickname().name()).isEqualTo("nickname");
+        assertThat(member.getNewsletterInboxAddress().address())
+                .matches("^[a-z0-9]{12}@inbound\\.letterpick\\.test$");
     }
 
     @Test

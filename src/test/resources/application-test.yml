@@ -9,3 +9,7 @@ spring:
 
 frontend:
   base-url: http://localhost:3000
+
+newsletter:
+  inbox-address:
+    domain: inbound.letterpick.test
