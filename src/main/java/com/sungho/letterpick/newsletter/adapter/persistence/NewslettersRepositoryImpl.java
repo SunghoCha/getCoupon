@@ -27,7 +27,7 @@ public class NewslettersRepositoryImpl implements CustomNewslettersRepository {
                 .select(Projections.constructor(
                         NewsletterListItem.class,
                         newsletter.id,
-                        newsletter.title,
+                        newsletter.name,
                         newsletter.description,
                         newsletter.category
                 ))

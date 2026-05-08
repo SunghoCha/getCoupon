@@ -1,6 +1,7 @@
 package com.sungho.letterpick.member.domain;
 
 import com.sungho.letterpick.common.auth.SocialProvider;
+import com.sungho.letterpick.common.domain.Email;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class MemberFixture {

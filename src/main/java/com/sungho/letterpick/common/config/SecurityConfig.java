@@ -6,6 +6,8 @@ import com.sungho.letterpick.member.adapter.security.CustomOidcUserService;
 import com.sungho.letterpick.member.adapter.security.OAuth2LoginFailureHandler;
 import com.sungho.letterpick.member.adapter.security.OAuth2LoginSuccessHandler;
 import java.time.Instant;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -20,6 +22,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import tools.jackson.databind.ObjectMapper;
 
 @Configuration
@@ -30,6 +35,12 @@ public class SecurityConfig {
             "/api/v1/newsletters",
             "/api/v1/newsletters/categories"
     };
+
+    private final String frontendBaseUrl;
+
+    public SecurityConfig(@Value("${frontend.base-url}") String frontendBaseUrl) {
+        this.frontendBaseUrl = frontendBaseUrl;
+    }
 
     /**
      * /api/** 전용 체인.
@@ -42,20 +53,22 @@ public class SecurityConfig {
     public SecurityFilterChain apiSecurityFilterChain(
             HttpSecurity http,
             AccessDeniedHandler accessDeniedHandler,
-            AuthenticationEntryPoint apiAuthenticationEntryPoint
+            AuthenticationEntryPoint apiAuthenticationEntryPoint,
+            CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
 
         http
                 .securityMatcher("/api/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 // TODO: 로그인 직후 프론트가 CSRF 토큰을 다시 확보할 수 있도록 /api/csrf 같은 엔드포인트 필요 여부 결정.
-                // TODO: 프론트/백엔드 도메인이 다르면 CORS allowCredentials와 허용 origin을 명시.
                 // TODO: 배포 환경 기준으로 세션 쿠키 SameSite/Secure 설정 확정.
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(csrfTokenRequestHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/auth/signup").hasAuthority("ROLE_PENDING_SIGNUP")
@@ -81,10 +94,12 @@ public class SecurityConfig {
             CustomOidcUserService customOidcUserService,
             CustomOAuth2UserService customOAuth2UserService,
             OAuth2LoginFailureHandler oAuth2LoginFailureHandler,
-            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+            CorsConfigurationSource corsConfigurationSource
     ) throws Exception {
         http
                 .securityMatcher("/oauth2/**", "/login/oauth2/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .oauth2Login(oauth2 -> oauth2
@@ -107,6 +122,20 @@ public class SecurityConfig {
             ErrorResponse body = new ErrorResponse("UNAUTHORIZED", "인증이 필요합니다", Instant.now());
             objectMapper.writeValue(response.getWriter(), body);
         };
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(frontendBaseUrl));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean

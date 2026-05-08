@@ -1,4 +1,4 @@
-package com.sungho.letterpick.member.domain;
+package com.sungho.letterpick.common.domain;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.domain;
 
+import com.sungho.letterpick.common.domain.Email;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
