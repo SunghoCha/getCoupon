@@ -1,0 +1,56 @@
+/*
+ * 전역 스타일.
+ * 디자인 토큰(색상·폰트)과 reset 수준의 기본 스타일만 둔다.
+ * 컴포넌트별 스타일은 각 .vue 파일의 <style scoped>에서 처리한다.
+ */
+
+:root {
+  /* 색상 토큰 — 추후 디자인이 정해지면 다시 조정한다. 지금은 무난한 톤. */
+  --color-primary: #2563eb;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-bg: #ffffff;
+  --color-border: #e5e7eb;
+
+  /* 폰트 토큰 */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --font-mono: ui-monospace, Consolas, monospace;
+
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 기본 reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
