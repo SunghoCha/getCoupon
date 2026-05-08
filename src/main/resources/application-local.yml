@@ -11,3 +11,8 @@ spring:
 newsletter:
   inbox-address:
     domain: ${NEWSLETTER_INBOX_ADDRESS_DOMAIN:inbound.letterpick.local}
+
+letterpick:
+  seed:
+    newsletter:
+      enabled: true
