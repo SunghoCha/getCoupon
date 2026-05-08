@@ -1,6 +1,7 @@
 package com.sungho.letterpick.member.domain;
 
 import com.sungho.letterpick.common.auth.SocialProvider;
+import com.sungho.letterpick.common.domain.Email;
 import com.sungho.letterpick.member.domain.exception.MemberStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

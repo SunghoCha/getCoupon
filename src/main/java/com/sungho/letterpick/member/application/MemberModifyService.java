@@ -2,7 +2,7 @@ package com.sungho.letterpick.member.application;
 
 import com.sungho.letterpick.member.application.provided.*;
 import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
-import com.sungho.letterpick.member.domain.Email;
+import com.sungho.letterpick.common.domain.Email;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.NewsletterInboxAddress;
 import com.sungho.letterpick.member.domain.Nickname;

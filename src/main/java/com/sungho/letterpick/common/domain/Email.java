@@ -1,4 +1,4 @@
-package com.sungho.letterpick.member.domain;
+package com.sungho.letterpick.common.domain;
 
 import jakarta.persistence.Embeddable;
 
