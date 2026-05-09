@@ -1,5 +1,9 @@
 package com.sungho.letterpick.common.config;
 
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_ADMIN;
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_PENDING_SIGNUP;
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_USER;
+
 import com.sungho.letterpick.common.exception.ErrorResponse;
 import com.sungho.letterpick.member.adapter.security.CustomOAuth2UserService;
 import com.sungho.letterpick.member.adapter.security.CustomOidcUserService;
@@ -36,6 +40,8 @@ public class SecurityConfig {
             "/api/v1/newsletters/categories"
     };
 
+    private static final String CSRF_ENDPOINT = "/api/v1/csrf";
+
     private final String frontendBaseUrl;
 
     public SecurityConfig(@Value("${frontend.base-url}") String frontendBaseUrl) {
@@ -61,7 +67,6 @@ public class SecurityConfig {
         http
                 .securityMatcher("/api/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                // TODO: 로그인 직후 프론트가 CSRF 토큰을 다시 확보할 수 있도록 /api/csrf 같은 엔드포인트 필요 여부 결정.
                 // TODO: 배포 환경 기준으로 세션 쿠키 SameSite/Secure 설정 확정.
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -69,10 +74,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, CSRF_ENDPOINT).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasAuthority(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
-                        .requestMatchers("/api/v1/auth/signup").hasAuthority("ROLE_PENDING_SIGNUP")
-                        .requestMatchers("/api/v1/members/**").hasAuthority("ROLE_USER")
+                        .requestMatchers("/api/v1/auth/signup").hasAuthority(ROLE_PENDING_SIGNUP)
+                        .requestMatchers("/api/v1/members/**").hasAuthority(ROLE_USER)
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e

@@ -1,5 +1,7 @@
 package com.sungho.letterpick.common.auth;
 
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_USER;
+
 import com.sungho.letterpick.member.adapter.security.CustomOAuth2Principal;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.MemberFixture;
@@ -21,14 +23,14 @@ public class WithLoginUserSecurityContextFactory implements WithSecurityContextF
         Member member = MemberFixture.createMemberWithId(annotation.memberId());
 
         OAuth2User delegate = new DefaultOAuth2User(
-                List.of(new SimpleGrantedAuthority("ROLE_USER")),
+                List.of(new SimpleGrantedAuthority(ROLE_USER)),
                 Map.of("sub", "test-sub-" + annotation.memberId()),
                 "sub"
         );
         SocialPrincipal principal = CustomOAuth2Principal.existing(member, delegate);
 
         List<SimpleGrantedAuthority> authorities = annotation.authorities().length == 0
-                ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                ? List.of(new SimpleGrantedAuthority(ROLE_USER))
                 : Arrays.stream(annotation.authorities())
                 .map(SimpleGrantedAuthority::new)
                 .toList();

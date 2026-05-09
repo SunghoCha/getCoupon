@@ -86,6 +86,20 @@ class AuthControllerSecurityTest {
 
     @Test
     @WithPendingSocialUser
+    @DisplayName("ROLE_PENDING_SIGNUP 사용자가 CSRF 토큰 없이 /api/v1/auth/signup 호출 시 403")
+    void signup_returns_403_for_pending_user_without_csrf() throws Exception {
+        MemberSignupRequest request = new MemberSignupRequest("새닉네임");
+
+        mockMvc.perform(post("/api/v1/auth/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+
+        verify(memberModifier, never()).register(any(MemberRegisterRequest.class));
+    }
+
+    @Test
+    @WithPendingSocialUser
     @DisplayName("ROLE_PENDING_SIGNUP 사용자가 /api/v1/auth/signup 호출 시 가입 완료")
     void signup_returns_201_for_pending_user() throws Exception {
         Member savedMember = MemberFixture.createMemberWithId(99L);
