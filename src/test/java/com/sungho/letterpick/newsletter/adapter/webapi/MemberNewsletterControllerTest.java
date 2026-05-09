@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -89,13 +90,47 @@ class MemberNewsletterControllerTest {
 
     @Test
     @WithLoginUser(memberId = 42L)
-    @DisplayName("재구독 시 구독 이력이 없으면 409가 반환된다")
-    void resubscribe_returns_409_when_member_newsletter_not_found() throws Exception {
+    @DisplayName("재구독 시 구독 이력이 없으면 404가 반환된다")
+    void resubscribe_returns_404_when_member_newsletter_not_found() throws Exception {
         doThrow(new MemberNewsletterNotFoundException())
                 .when(memberNewsletterModifier).resubscribe(42L, 7L);
 
         mockMvc.perform(patch("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
-                .andExpect(status().isConflict())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NWL-002"));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("구독 해지 요청 시 204가 반환되고 서비스에 위임된다")
+    void unsubscribe_returns_204_and_delegates_to_service() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
+                .andExpect(status().isNoContent());
+
+        verify(memberNewsletterModifier).unsubscribe(42L, 7L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("구독 해지 시 뉴스레터를 찾지 못하면 404가 반환된다")
+    void unsubscribe_returns_404_when_newsletter_not_found() throws Exception {
+        doThrow(new NewsletterNotFoundException())
+                .when(memberNewsletterModifier).unsubscribe(42L, 999L);
+
+        mockMvc.perform(delete("/api/v1/me/newsletter-subscriptions/{newsletterId}", 999L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NWL-001"));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("구독 해지 시 구독 이력이 없으면 404가 반환된다")
+    void unsubscribe_returns_404_when_member_newsletter_not_found() throws Exception {
+        doThrow(new MemberNewsletterNotFoundException())
+                .when(memberNewsletterModifier).unsubscribe(42L, 7L);
+
+        mockMvc.perform(delete("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
+                .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("NWL-002"));
     }
 }
