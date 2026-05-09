@@ -26,8 +26,17 @@ public interface MemberNewsletterControllerApi {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "재구독 성공"),
-            @ApiResponse(responseCode = "404", description = "뉴스레터를 찾을 수 없음"),
-            @ApiResponse(responseCode = "409", description = "구독 이력을 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "뉴스레터 또는 구독 이력을 찾을 수 없음")
     })
     void resubscribe(LoginUser loginUser, Long newsletterId);
+
+    @Operation(
+            summary = "뉴스레터 구독 해지",
+            description = "로그인한 회원이 앱 안에서 특정 뉴스레터를 구독 해지한다. 외부 뉴스레터 사이트의 실제 구독 해지는 수행하지 않는다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "구독 해지 성공"),
+            @ApiResponse(responseCode = "404", description = "뉴스레터 또는 구독 이력을 찾을 수 없음")
+    })
+    void unsubscribe(LoginUser loginUser, Long newsletterId);
 }

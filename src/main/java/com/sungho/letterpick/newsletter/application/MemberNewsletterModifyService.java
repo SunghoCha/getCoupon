@@ -28,4 +28,15 @@ public class MemberNewsletterModifyService implements MemberNewsletterModifier {
                 .orElseThrow(MemberNewsletterNotFoundException::new);
         memberNewsletter.resubscribe();
     }
+
+    @Override
+    public void unsubscribe(Long memberId, Long newsletterId) {
+        if (!newslettersRepository.existsById(newsletterId)) {
+            throw new NewsletterNotFoundException();
+        }
+
+        MemberNewsletter memberNewsletter = memberNewsletterRepository.findByMemberIdAndNewsletterId(memberId, newsletterId)
+                .orElseThrow(MemberNewsletterNotFoundException::new);
+        memberNewsletter.unsubscribe();
+    }
 }

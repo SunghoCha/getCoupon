@@ -36,5 +36,12 @@ public class MemberNewsletterController implements MemberNewsletterControllerApi
         memberNewsletterModifier.resubscribe(loginUser.memberId(), newsletterId);
     }
 
+    @Override
+    @DeleteMapping("/{newsletterId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unsubscribe(@CurrentUser LoginUser loginUser,
+                            @PathVariable("newsletterId") Long newsletterId) {
+        memberNewsletterModifier.unsubscribe(loginUser.memberId(), newsletterId);
+    }
 
 }
