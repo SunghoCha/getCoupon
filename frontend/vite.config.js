@@ -17,4 +17,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // 백엔드 CORS·redirect 설정이 5173 가정.
+    // 점유 시 fallback하지 않고 명시 에러로 죽도록 strictPort 사용.
+    port: 5173,
+    strictPort: true,
+  },
 })
