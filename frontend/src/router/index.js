@@ -3,12 +3,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '@/views/HomePage.vue'
 import LoginPage from '@/views/LoginPage.vue'
 import SignupPage from '@/views/SignupPage.vue'
+import MyPage from '@/views/MyPage.vue'
 import NewslettersPage from '@/views/NewslettersPage.vue'
 import InboxPage from '@/views/InboxPage.vue'
 import TodayPage from '@/views/TodayPage.vue'
 import NewsletterIssuesPage from '@/views/NewsletterIssuesPage.vue'
 import IssueDetailPage from '@/views/IssueDetailPage.vue'
 import NotFoundPage from '@/views/NotFoundPage.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   {
@@ -25,6 +27,13 @@ const routes = [
     path: '/signup',
     name: 'signup',
     component: SignupPage,
+  },
+  {
+    // 내 정보 페이지: 회원 정보 표시 + 닉네임 변경 + 탈퇴.
+    path: '/me',
+    name: 'my',
+    component: MyPage,
+    meta: { requiresAuth: true },
   },
   {
     path: '/newsletters',
@@ -67,6 +76,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// 보호 라우트 가드: meta.requiresAuth가 true면 비로그인은 /login으로 보낸다.
+// main.js가 mount 전에 fetchMe를 끝내므로 이 시점엔 store가 정확한 상태를 가진다.
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth) {
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn) {
+      return { name: 'login' }
+    }
+  }
+  return true
 })
 
 export default router
