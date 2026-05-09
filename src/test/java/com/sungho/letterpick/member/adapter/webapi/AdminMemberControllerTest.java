@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.adapter.webapi;
 
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_ADMIN;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -38,7 +39,7 @@ class AdminMemberControllerTest {
     MemberModifier memberModifier;
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("관리자가 회원 정지 요청 시 204가 반환되고 서비스에 위임된다")
     void suspend_returns_204_when_admin() throws Exception {
         MemberSuspendRequest request = new MemberSuspendRequest(42L);
@@ -52,7 +53,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("정지 대상 회원이 없으면 404가 반환된다")
     void suspend_returns_404_when_member_not_found() throws Exception {
         MemberSuspendRequest request = new MemberSuspendRequest(42L);
@@ -67,7 +68,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("정지 대상이 ACTIVE가 아니면 409가 반환된다")
     void suspend_returns_409_when_status_violation() throws Exception {
         MemberSuspendRequest request = new MemberSuspendRequest(42L);
@@ -82,7 +83,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("memberId가 null이면 400이 반환된다")
     void suspend_returns_400_when_memberId_null() throws Exception {
         MemberSuspendRequest request = new MemberSuspendRequest(null);
@@ -97,7 +98,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("관리자가 회원 탈퇴 처리 요청 시 204가 반환되고 서비스에 위임된다")
     void withdrawByAdmin_returns_204_when_admin() throws Exception {
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(42L);
@@ -111,7 +112,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("탈퇴 처리 대상 회원이 없으면 404가 반환된다")
     void withdrawByAdmin_returns_404_when_member_not_found() throws Exception {
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(42L);
@@ -126,7 +127,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("탈퇴 처리 대상이 SUSPENDED가 아니면 409가 반환된다")
     void withdrawByAdmin_returns_409_when_status_violation() throws Exception {
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(42L);
@@ -141,7 +142,7 @@ class AdminMemberControllerTest {
     }
 
     @Test
-    @WithLoginUser(memberId = 1L, authorities = {"ROLE_ADMIN"})
+    @WithLoginUser(memberId = 1L, authorities = {ROLE_ADMIN})
     @DisplayName("탈퇴 처리 요청에서 memberId가 null이면 400이 반환된다")
     void withdrawByAdmin_returns_400_when_memberId_null() throws Exception {
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(null);

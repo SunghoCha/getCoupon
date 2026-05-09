@@ -5,7 +5,14 @@ import axios from 'axios'
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
   withCredentials: true,
+  withXSRFToken: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
 })
+
+export async function ensureCsrfToken() {
+  await apiClient.get('/api/v1/csrf')
+}
 
 // 요청 인터셉터 골격 (인증 헤더 등 후속 작업에서 추가)
 apiClient.interceptors.request.use(

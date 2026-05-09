@@ -1,5 +1,7 @@
 package com.sungho.letterpick.common.auth;
 
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_PENDING_SIGNUP;
+
 import com.sungho.letterpick.member.adapter.security.CustomOAuth2Principal;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,7 @@ public class WithPendingSocialUserSecurityContextFactory
         );
 
         OAuth2User delegate = new DefaultOAuth2User(
-                List.of(new SimpleGrantedAuthority("ROLE_PENDING_SIGNUP")),
+                List.of(new SimpleGrantedAuthority(ROLE_PENDING_SIGNUP)),
                 Map.of("sub", "test-sub-pending"),
                 "sub"
         );

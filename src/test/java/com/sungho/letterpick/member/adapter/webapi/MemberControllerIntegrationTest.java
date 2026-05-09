@@ -1,5 +1,6 @@
 package com.sungho.letterpick.member.adapter.webapi;
 
+import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_ADMIN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -143,7 +144,7 @@ class MemberControllerIntegrationTest {
         return new UsernamePasswordAuthenticationToken(
                 new LoginUser(999L),
                 null,
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                List.of(new SimpleGrantedAuthority(ROLE_ADMIN))
         );
     }
 }

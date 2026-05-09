@@ -1,5 +1,5 @@
 <script>
-import apiClient from '@/api/client'
+import apiClient, { ensureCsrfToken } from '@/api/client'
 
 // 백엔드 MemberSignupRequest 제약과 동일.
 // @NotBlank, @Size(min=2,max=20), @Pattern(^[가-힣a-zA-Z0-9]+$)
@@ -32,6 +32,7 @@ export default {
       this.submitting = true
       this.errorMessage = ''
       try {
+        await ensureCsrfToken()
         await apiClient.post('/api/v1/auth/signup', {
           nickname: this.nickname.trim(),
         })
