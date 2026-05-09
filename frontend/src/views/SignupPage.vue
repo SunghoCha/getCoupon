@@ -1,5 +1,5 @@
 <script>
-import apiClient, { ensureCsrfToken } from '@/api/client'
+import * as authApi from '@/api/auth'
 
 // 백엔드 MemberSignupRequest 제약과 동일.
 // @NotBlank, @Size(min=2,max=20), @Pattern(^[가-힣a-zA-Z0-9]+$)
@@ -32,10 +32,7 @@ export default {
       this.submitting = true
       this.errorMessage = ''
       try {
-        await ensureCsrfToken()
-        await apiClient.post('/api/v1/auth/signup', {
-          nickname: this.nickname.trim(),
-        })
+        await authApi.signup(this.nickname.trim())
         // 가입 성공 시 백엔드가 SecurityContext를 ROLE_USER로 갱신함.
         // 클라이언트는 홈으로 이동.
         this.$router.push('/')
