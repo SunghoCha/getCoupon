@@ -1,6 +1,5 @@
 package com.sungho.letterpick.member.adapter.webapi;
 
-import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_ADMIN;
 import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
@@ -13,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.sungho.letterpick.LetterPickTestConfiguration;
-import com.sungho.letterpick.common.auth.LoginUser;
+import com.sungho.letterpick.common.auth.WithAdminUser;
 import com.sungho.letterpick.member.adapter.security.CustomOAuth2Principal;
 import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.application.provided.MemberNicknameChangeRequest;
@@ -32,7 +31,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -94,13 +92,13 @@ class MemberControllerIntegrationTest {
     }
 
     @Test
+    @WithAdminUser
     @DisplayName("관리자가 회원을 정지하면 상태가 SUSPENDED로 전이된다")
     void suspend_flow() throws Exception {
         Member saved = memberRepository.save(MemberFixture.createMember());
         MemberSuspendRequest request = new MemberSuspendRequest(saved.getId());
 
         mockMvc.perform(post("/api/v1/admin/members/suspension")
-                        .with(authentication(adminAuth()))
                         .with(csrf().asHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -111,6 +109,7 @@ class MemberControllerIntegrationTest {
     }
 
     @Test
+    @WithAdminUser
     @DisplayName("관리자가 정지된 회원을 탈퇴 처리하면 상태가 DEACTIVATED로 전이된다")
     void withdrawByAdmin_flow() throws Exception {
         Member member = MemberFixture.createMember();
@@ -119,7 +118,6 @@ class MemberControllerIntegrationTest {
         MemberWithdrawByAdminRequest request = new MemberWithdrawByAdminRequest(saved.getId());
 
         mockMvc.perform(post("/api/v1/admin/members/withdrawal")
-                        .with(authentication(adminAuth()))
                         .with(csrf().asHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -154,11 +152,4 @@ class MemberControllerIntegrationTest {
         );
     }
 
-    private Authentication adminAuth() {
-        return new UsernamePasswordAuthenticationToken(
-                new LoginUser(999L),
-                null,
-                List.of(new SimpleGrantedAuthority(ROLE_ADMIN))
-        );
-    }
 }
