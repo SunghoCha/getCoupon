@@ -41,6 +41,7 @@ public class SecurityConfig {
     };
 
     private static final String CSRF_ENDPOINT = "/api/v1/csrf";
+    private static final String LOGOUT_ENDPOINT = "/api/v1/auth/logout";
 
     private final String frontendBaseUrl;
 
@@ -72,9 +73,16 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(csrfTokenRequestHandler)
                 )
+                .logout(logout -> logout
+                        .logoutUrl(LOGOUT_ENDPOINT)
+                        .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpStatus.NO_CONTENT.value()))
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, CSRF_ENDPOINT).permitAll()
+                        .requestMatchers(HttpMethod.POST, LOGOUT_ENDPOINT).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/auth/signup").hasAuthority(ROLE_PENDING_SIGNUP)
