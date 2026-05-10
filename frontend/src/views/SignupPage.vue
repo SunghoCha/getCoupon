@@ -1,5 +1,6 @@
 <script>
 import * as authApi from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
 // 백엔드 MemberSignupRequest 제약과 동일.
 // @NotBlank, @Size(min=2,max=20), @Pattern(^[가-힣a-zA-Z0-9]+$)
@@ -34,7 +35,10 @@ export default {
       try {
         await authApi.signup(this.nickname.trim())
         // 가입 성공 시 백엔드가 SecurityContext를 ROLE_USER로 갱신함.
-        // 클라이언트는 홈으로 이동.
+        // 클라이언트 store는 여전히 비로그인 상태이므로 fetchMe로 채운 뒤 이동한다.
+        // (안 하면 헤더가 새로고침 전까지 비로그인으로 보임 — main.js fetchMe만 부팅 시 1회 돌므로)
+        const authStore = useAuthStore()
+        await authStore.fetchMe()
         this.$router.push('/')
       } catch (err) {
         // 401: 세션 없음. /login으로 보내기.
