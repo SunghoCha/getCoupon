@@ -8,6 +8,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import static com.sungho.letterpick.newsletter.domain.MemberNewsletterStatus.*;
+import static java.util.Objects.requireNonNull;
 
 @Entity
 @Getter
@@ -36,8 +37,8 @@ public class MemberNewsletter {
     private MemberNewsletterStatus status;
 
     private MemberNewsletter(Long memberId, Long newsletterId) {
-        this.memberId = memberId;
-        this.newsletterId = newsletterId;
+        this.memberId = requireNonNull(memberId);
+        this.newsletterId = requireNonNull(newsletterId);
         this.status = ACTIVE;
     }
 

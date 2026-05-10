@@ -16,7 +16,7 @@ class MemberNewsletterTest {
         // then
         assertThat(memberNewsletter.getStatus()).isEqualTo(ACTIVE);
     }
-    
+
     @Test
     @DisplayName("ACTIVE 상태에서 구독해지하면 UNSUBSCRIBED가 된다")
     void unsubscribeWhenActive() {
