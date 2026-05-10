@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +51,44 @@ class MemberNewsletterControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("NONE"))
                 .andExpect(jsonPath("$.externalSubscribeUrl").value("https://example.com/subscribe"));
+
+        verify(memberNewsletterFinder).findSubscriptionInfo(42L, 7L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("구독 정보 조회 시 이미 구독 중이면 외부 구독 URL은 null이다")
+    void getSubscriptionInfo_returns_active_with_null_external_subscribe_url() throws Exception {
+        given(memberNewsletterFinder.findSubscriptionInfo(42L, 7L))
+                .willReturn(SubscriptionInfo.active());
+
+        mockMvc.perform(get("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "status": "ACTIVE",
+                          "externalSubscribeUrl": null
+                        }
+                        """));
+
+        verify(memberNewsletterFinder).findSubscriptionInfo(42L, 7L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("구독 정보 조회 시 구독 해지 상태이면 외부 구독 URL은 null이다")
+    void getSubscriptionInfo_returns_unsubscribed_with_null_external_subscribe_url() throws Exception {
+        given(memberNewsletterFinder.findSubscriptionInfo(42L, 7L))
+                .willReturn(SubscriptionInfo.unsubscribed());
+
+        mockMvc.perform(get("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {
+                          "status": "UNSUBSCRIBED",
+                          "externalSubscribeUrl": null
+                        }
+                        """));
 
         verify(memberNewsletterFinder).findSubscriptionInfo(42L, 7L);
     }

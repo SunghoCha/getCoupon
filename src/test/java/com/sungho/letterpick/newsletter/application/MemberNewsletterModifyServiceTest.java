@@ -157,5 +157,23 @@ class MemberNewsletterModifyServiceTest {
         assertThat(found.getStatus()).isEqualTo(MemberNewsletterStatus.UNSUBSCRIBED);
     }
 
-
+    @Test
+    @DisplayName("이미 구독 중인 뉴스레터를 재구독하면 ACTIVE 상태를 유지한다")
+    void resubscribe_keeps_status_when_already_active() {
+        // given
+        Long memberId = 1L;
+        Newsletter savedNewsletter = newslettersRepository.save(NewsletterFixture.createNewsletter());
+        Long newsletterId = savedNewsletter.getId();
+        MemberNewsletter memberNewsletter = MemberNewsletter.create(memberId, newsletterId);
+        memberNewsletterRepository.save(memberNewsletter);
+        em.flush();
+        em.clear();
+        // when
+        memberNewsletterModifyService.resubscribe(memberId, newsletterId);
+        em.flush();
+        em.clear();
+        // then
+        MemberNewsletter found = memberNewsletterRepository.findByMemberIdAndNewsletterId(memberId, newsletterId).orElseThrow();
+        assertThat(found.getStatus()).isEqualTo(MemberNewsletterStatus.ACTIVE);
+    }
 }
