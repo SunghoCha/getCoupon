@@ -29,6 +29,7 @@ public class NewslettersRepositoryImpl implements CustomNewslettersRepository {
                         newsletter.id,
                         newsletter.name,
                         newsletter.description,
+                        newsletter.imageUrl,
                         newsletter.category
                 ))
                 .from(newsletter)

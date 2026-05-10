@@ -1,9 +1,9 @@
 <script>
-import { newslettersMock, newsletterCategoriesMock } from '@/mocks/newsletters'
+import * as newsletterApi from '@/api/newsletter'
 import NewsletterDetailModal from '@/components/NewsletterDetailModal.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 
-const PAGE_SIZE = 6
+const PAGE_SIZE = 20
 
 export default {
   name: 'NewslettersPage',
@@ -12,84 +12,108 @@ export default {
   },
   data() {
     return {
-      // 추후 axios.get('/api/v1/newsletters', { params: { category, query, page, size } })
-      // 응답으로 교체될 자리. mock 데이터 구조는 백엔드 API DRAFT와 동일.
-      // 백엔드는 비로그인 호출 시 각 항목의 memberNewsletterStatus를 null로 응답하지만,
-      // mock 데이터는 모든 항목에 status가 채워져 있으므로 store 기반으로 변환한다 (allNewsletters 참고).
-      rawNewsletters: newslettersMock.items,
-      // 카테고리 칩에 그릴 항목.
-      // 백엔드 응답에는 도메인 enum만 (ALL 없음). 프론트가 '전체' 칩을 표시용으로 추가.
-      categories: [
-        { code: 'ALL', label: '전체' },
-        ...newsletterCategoriesMock.categories,
-      ],
+      // 백엔드 GET /api/v1/newsletters 응답 누적.
+      // memberNewsletterStatus는 비로그인이면 백엔드가 null로 응답하므로 클라 사이드 변환 불필요.
+      items: [],
+      // 다음에 호출할 페이지 번호. 0부터 시작.
+      nextPage: 0,
+      hasNext: false,
+      loading: false,
+
+      // 카테고리 칩에 그릴 항목. 'ALL'은 백엔드 응답 없는 프론트 표시용.
+      categories: [{ code: 'ALL', label: '전체' }],
       selectedCategory: 'ALL',
+
+      // 키워드 검색은 백엔드 미지원이라 현재 로드된 items 내 클라 사이드 필터.
+      // 백엔드에 검색 endpoint 추가되면 query를 axios params로 옮김.
       searchQuery: '',
-      // 무한 스크롤 상태. 현재까지 로드한 페이지 수.
-      // 백엔드 붙일 때는 이 page 값으로 API 호출 (page, size).
-      page: 0,
-      // 상세 모달 상태
+
+      // 상세 모달
       detailOpen: false,
       selectedNewsletter: null,
     }
   },
   computed: {
-    authStore() {
-      return useAuthStore()
+    toastStore() {
+      return useToastStore()
     },
-    // 비로그인이면 모든 항목의 memberNewsletterStatus를 null로 강제.
-    // 백엔드 응답을 흉내내는 것 — 비로그인 사용자에겐 회원-뉴스레터 관계 자체가 없음.
-    // (백엔드 API DRAFT §1.1: 뉴스레터 목록은 비로그인 허용, 비로그인이면 status = null)
-    allNewsletters() {
-      if (this.authStore.isLoggedIn) {
-        return this.rawNewsletters
-      }
-      return this.rawNewsletters.map((n) => ({
-        ...n,
-        memberNewsletterStatus: null,
-      }))
-    },
-    filteredNewsletters() {
-      let result = this.allNewsletters
-      if (this.selectedCategory !== 'ALL') {
-        result = result.filter((n) => n.category.code === this.selectedCategory)
-      }
+    filteredItems() {
       const q = this.searchQuery.trim().toLowerCase()
-      if (q) {
-        result = result.filter(
-          (n) =>
-            n.name.toLowerCase().includes(q) ||
-            n.description.toLowerCase().includes(q),
-        )
-      }
-      return result
-    },
-    displayedItems() {
-      return this.filteredNewsletters.slice(0, (this.page + 1) * PAGE_SIZE)
+      if (!q) return this.items
+      return this.items.filter(
+        (n) =>
+          n.name.toLowerCase().includes(q)
+          || n.description.toLowerCase().includes(q),
+      )
     },
     isEmpty() {
-      return this.filteredNewsletters.length === 0
+      // 최소 한 번이라도 fetchPage가 끝난 뒤에만 빈 상태로 본다 (nextPage > 0).
+      // mount 직후 items=[]·loading=false 시점엔 v-infinite-scroll을 표시해서
+      // sentinel이 mount되어 첫 onLoad가 자동 트리거되도록 한다.
+      return this.nextPage > 0 && !this.loading && this.filteredItems.length === 0
     },
   },
   watch: {
-    // 카테고리·검색어 변경 시 무한 스크롤 페이지를 처음으로 되돌린다.
+    // 카테고리 변경 시 reset.
+    // fetchPage(0)을 직접 부르지 않고, items=[]·nextPage=0·hasNext=true로 두면
+    // v-infinite-scroll의 sentinel이 빈 박스 viewport에 visible해져 onLoad 자동 트리거 → fetchPage(0).
+    // 첫 페이지 호출 경로를 onLoad 한 곳으로 통일해서 자동 누적 로딩 회피.
     selectedCategory() {
-      this.page = 0
-    },
-    searchQuery() {
-      this.page = 0
+      this.items = []
+      this.nextPage = 0
+      this.hasNext = true
     },
   },
+  async created() {
+    // 첫 페이지는 v-infinite-scroll의 onLoad가 mount 시 자동 트리거하므로 여기서 호출하지 않는다.
+    // (created에서 직접 호출하면 mode="intersect" sentinel이 mount 직후 visible 상태에서 추가 트리거되어
+    //  사용자 스크롤 없이 모든 페이지가 자동 누적 호출되는 현상이 발생함)
+    await this.loadCategories()
+  },
   methods: {
-    // v-infinite-scroll의 @load 콜백.
-    // 더 이상 로드할 항목이 없으면 done('empty'), 있으면 다음 페이지 로드 후 done('ok').
+    async loadCategories() {
+      try {
+        const data = await newsletterApi.fetchCategories()
+        this.categories = [
+          { code: 'ALL', label: '전체' },
+          ...data.categories,
+        ]
+      } catch {
+        this.toastStore.error('카테고리를 불러오지 못했습니다.')
+      }
+    },
+    async fetchPage(pageNum) {
+      if (this.loading) return
+      this.loading = true
+      try {
+        const data = await newsletterApi.fetchNewsletters({
+          category: this.selectedCategory,
+          page: pageNum,
+          size: PAGE_SIZE,
+        })
+        if (pageNum === 0) {
+          this.items = data.items
+        } else {
+          this.items.push(...data.items)
+        }
+        this.hasNext = data.page.hasNext
+        this.nextPage = data.page.number + 1
+      } catch {
+        this.toastStore.error('뉴스레터 목록을 불러오지 못했습니다.')
+      } finally {
+        this.loading = false
+      }
+    },
+    // v-infinite-scroll @load. 첫 진입(items=[])·카테고리 변경 후·사용자 스크롤 끝 도달 모두 이 경로로 들어옴.
     onLoad({ done }) {
-      if (this.displayedItems.length >= this.filteredNewsletters.length) {
+      if (!this.hasNext && this.items.length > 0) {
+        // 끝까지 다 받음. 다음 트리거 차단.
         done('empty')
         return
       }
-      this.page += 1
-      done('ok')
+      this.fetchPage(this.nextPage).then(() => {
+        done(this.hasNext ? 'ok' : 'empty')
+      })
     },
     openDetail(newsletter) {
       this.selectedNewsletter = newsletter
@@ -130,7 +154,7 @@ export default {
       <v-text-field
         v-model="searchQuery"
         prepend-inner-icon="mdi-magnify"
-        placeholder="뉴스레터 이름·설명 검색"
+        placeholder="뉴스레터 이름·설명 검색 (현재 로드된 항목 내)"
         variant="outlined"
         density="compact"
         hide-details
@@ -150,9 +174,15 @@ export default {
       <div>검색 결과가 없습니다.</div>
     </v-sheet>
 
-    <!-- 무한 스크롤 + 2열 리스트 (박스 내부 스크롤) -->
+    <!--
+      무한 스크롤 + 2열 리스트.
+      :key="selectedCategory" — 카테고리 변경 시 v-infinite-scroll을 강제 재생성.
+      이유: v-infinite-scroll은 한 번 done('empty')를 받으면 sentinel observer가 비활성되어
+      items를 비우고 hasNext=true로 reset해도 다시 트리거되지 않는다. 새 인스턴스로 강제 mount.
+    -->
     <v-infinite-scroll
       v-else
+      :key="selectedCategory"
       mode="intersect"
       max-height="600"
       empty-text=""
@@ -161,7 +191,7 @@ export default {
     >
       <v-row dense>
         <v-col
-          v-for="newsletter in displayedItems"
+          v-for="newsletter in filteredItems"
           :key="newsletter.newsletterId"
           cols="12"
           sm="6"
@@ -174,7 +204,13 @@ export default {
           >
             <template #prepend>
               <v-avatar size="48" rounded="md">
-                <v-img :src="newsletter.imageUrl" :alt="newsletter.name" />
+                <v-img :src="newsletter.imageUrl" :alt="newsletter.name">
+                  <template #error>
+                    <div class="image-fallback">
+                      {{ newsletter.name.slice(0, 2) }}
+                    </div>
+                  </template>
+                </v-img>
               </v-avatar>
             </template>
           </v-list-item>
@@ -215,5 +251,18 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 이미지 로드 실패 시 fallback (외부 호스트 hotlink·dead URL 대응) */
+.image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #757575;
+  font-weight: 600;
+  font-size: 14px;
 }
 </style>

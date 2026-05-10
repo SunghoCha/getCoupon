@@ -38,8 +38,8 @@ public record NewslettersResponse(
             String name,
             String description,
             String imageUrl,
-            CategoryResponse category,
-            String memberNewsletterStatus
+            CategoryResponse category
+
     ) {
         public static NewsletterResponse from(NewsletterListItem newsletter) {
             requireNonNull(newsletter);
@@ -49,8 +49,8 @@ public record NewslettersResponse(
                     newsletter.name(),
                     newsletter.description(),
                     newsletter.imageUrl(),
-                    CategoryResponse.from(newsletter.category()),
-                    newsletter.memberNewsletterStatus()
+                    CategoryResponse.from(newsletter.category())
+
             );
         }
     }

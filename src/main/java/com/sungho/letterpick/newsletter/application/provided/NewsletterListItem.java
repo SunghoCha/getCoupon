@@ -9,13 +9,14 @@ public record NewsletterListItem(
         String name,
         String description,
         String imageUrl,
-        NewsletterCategoryItem category,
-        String memberNewsletterStatus
+        NewsletterCategoryItem category
 ) {
 
     public NewsletterListItem {
         requireNonNull(newsletterId);
         requireNonNull(name);
+        requireNonNull(description);
+        requireNonNull(imageUrl);
         requireNonNull(category);
     }
 
@@ -23,15 +24,9 @@ public record NewsletterListItem(
             Long newsletterId,
             String name,
             String description,
+            String imageUrl,
             NewsletterCategory category
     ) {
-        this(
-                newsletterId,
-                name,
-                description,
-                null,
-                NewsletterCategoryItem.from(category),
-                null
-        );
+        this(newsletterId, name, description, imageUrl, NewsletterCategoryItem.from(category));
     }
 }
