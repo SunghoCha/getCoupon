@@ -71,16 +71,16 @@ class NewsletterControllerTest {
                         "테크 레터",
                         "기술 뉴스레터 설명",
                         "https://example.com/tech.png",
-                        new NewsletterCategoryItem("TECH", "IT·테크"),
-                        "NONE"
+                        new NewsletterCategoryItem("TECH", "IT·테크")
+
                 ),
                 new NewsletterListItem(
                         2L,
                         "AI 레터",
                         "AI 뉴스레터 설명",
                         "https://example.com/ai.png",
-                        new NewsletterCategoryItem("TECH", "IT·테크"),
-                        "NONE"
+                        new NewsletterCategoryItem("TECH", "IT·테크")
+
                 )
         );
         given(newsletterFinder.getNewsletters(any(), any()))
@@ -98,7 +98,6 @@ class NewsletterControllerTest {
                 .andExpect(jsonPath("$.items[0].imageUrl").value("https://example.com/tech.png"))
                 .andExpect(jsonPath("$.items[0].category.code").value("TECH"))
                 .andExpect(jsonPath("$.items[0].category.label").value("IT·테크"))
-                .andExpect(jsonPath("$.items[0].memberNewsletterStatus").value("NONE"))
                 .andExpect(jsonPath("$.items[1].newsletterId").value(2L))
                 .andExpect(jsonPath("$.items[1].name").value("AI 레터"))
                 .andExpect(jsonPath("$.page.number").value(0))
