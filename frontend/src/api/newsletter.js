@@ -1,10 +1,18 @@
 // 뉴스레터 도메인 API 호출.
-// fetchNewsletters: 카탈로그 페이지 단위 조회.
-//   - GET /api/v1/newsletters?category=...&page=...&size=...
-// fetchCategories: 카테고리 목록 조회.
-//   - GET /api/v1/newsletters/categories
-// 둘 다 백엔드 PUBLIC_GET이라 비로그인도 호출 가능.
-import apiClient from './client'
+//
+// 카탈로그 (비로그인 OK):
+//   - fetchNewsletters: GET /api/v1/newsletters?category=...&page=...&size=...
+//   - fetchCategories:  GET /api/v1/newsletters/categories
+//
+// 회원-뉴스레터 구독 (로그인 필수, /api/v1/me/newsletter-subscriptions/{id}):
+//   - fetchSubscriptionInfo: GET — { status, externalSubscribeUrl }
+//       status=NONE이면 externalSubscribeUrl 채워짐, 그 외엔 null
+//   - resubscribe:           PATCH — UNSUBSCRIBED → ACTIVE, 204
+//   - 처음 구독은 별도 API 없음 — fetchSubscriptionInfo에서 받은 externalSubscribeUrl로 외부 이동
+//   - 구독 해지(DELETE)는 다음 사이클 (티켓정제 03)
+import apiClient, { ensureCsrfToken } from './client'
+
+const SUBSCRIPTION_BASE = '/api/v1/me/newsletter-subscriptions'
 
 export async function fetchNewsletters({ category, page = 0, size = 20 } = {}) {
   const params = { page, size }
@@ -19,4 +27,14 @@ export async function fetchNewsletters({ category, page = 0, size = 20 } = {}) {
 export async function fetchCategories() {
   const { data } = await apiClient.get('/api/v1/newsletters/categories')
   return data
+}
+
+export async function fetchSubscriptionInfo(newsletterId) {
+  const { data } = await apiClient.get(`${SUBSCRIPTION_BASE}/${newsletterId}`)
+  return data
+}
+
+export async function resubscribe(newsletterId) {
+  await ensureCsrfToken()
+  await apiClient.patch(`${SUBSCRIPTION_BASE}/${newsletterId}`)
 }

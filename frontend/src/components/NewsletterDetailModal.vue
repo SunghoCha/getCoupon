@@ -1,4 +1,6 @@
 <script>
+import * as newsletterApi from '@/api/newsletter'
+import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 
 export default {
@@ -16,12 +18,26 @@ export default {
     },
   },
   emits: ['update:modelValue'],
+  data() {
+    return {
+      // 백엔드 GET /api/v1/me/newsletter-subscriptions/{id} 응답:
+      //   { status: 'NONE'|'ACTIVE'|'UNSUBSCRIBED', externalSubscribeUrl: string|null }
+      // 비로그인이면 호출 안 함 → null로 둠.
+      // 모달 열림·뉴스레터 변경마다 갱신.
+      subscriptionInfo: null,
+      // 구독 정보 조회 중 여부. 액션 버튼 로딩 표시에 사용.
+      loadingSubscription: false,
+      // 재구독 PATCH 진행 중 여부. 중복 호출 차단.
+      submitting: false,
+    }
+  },
   computed: {
+    authStore() {
+      return useAuthStore()
+    },
     toastStore() {
       return useToastStore()
     },
-    // v-model을 부모와 양방향 바인딩하기 위한 computed.
-    // 자식이 modelValue를 직접 변경할 수 없으므로 emit으로 부모에 알린다.
     isOpen: {
       get() {
         return this.modelValue
@@ -30,44 +46,114 @@ export default {
         this.$emit('update:modelValue', value)
       },
     },
-    // 백엔드 응답의 category는 { code, label } 객체. 라벨을 그대로 표시한다.
     categoryLabel() {
       return this.newsletter?.category?.label ?? ''
     },
     // 회원의 앱 내 관계 상태에 따른 액션 버튼 분기.
-    // 백엔드 응답의 memberNewsletterStatus를 그대로 사용.
-    // null/undefined면 비로그인 사용자 — 로그인 페이지로 유도.
+    // 비로그인이면 백엔드 호출 없이 '로그인 후 구독' 분기 (티켓정제 02 결정).
+    // 로그인+조회 전이면 비활성 + 로딩, 조회 후 status별 분기.
     primaryAction() {
       if (!this.newsletter) return null
-      const status = this.newsletter.memberNewsletterStatus
-      if (status === null || status === undefined) {
+      if (!this.authStore.isLoggedIn) {
         return { label: '로그인 후 구독', color: 'default', variant: 'tonal', disabled: false, action: 'login' }
       }
-      switch (status) {
+      if (!this.subscriptionInfo) {
+        return { label: '구독 상태 확인 중', color: 'default', variant: 'tonal', disabled: true, action: 'none' }
+      }
+      switch (this.subscriptionInfo.status) {
         case 'NONE':
-          return { label: '구독 시작', color: 'primary', variant: 'flat', disabled: false, action: 'subscribe' }
+          return { label: '구독 시작', color: 'primary', variant: 'flat', disabled: false, action: 'subscribe-external' }
         case 'UNSUBSCRIBED':
-          return { label: '다시 구독', color: 'primary', variant: 'flat', disabled: false, action: 'subscribe' }
+          return { label: '다시 구독', color: 'primary', variant: 'flat', disabled: false, action: 'resubscribe' }
         case 'ACTIVE':
           return { label: '구독 중', color: 'default', variant: 'tonal', disabled: true, action: 'none' }
         default:
-          return { label: '구독 시작', color: 'primary', variant: 'flat', disabled: false, action: 'subscribe' }
+          return { label: '구독 시작', color: 'primary', variant: 'flat', disabled: false, action: 'subscribe-external' }
       }
     },
   },
+  watch: {
+    // 모달이 열리거나 표시 뉴스레터가 바뀌면 구독 상태 다시 조회.
+    // 닫힐 때는 다음 열림에서 stale 데이터를 잠깐이라도 안 보이게 즉시 reset.
+    isOpen: {
+      handler(open) {
+        if (open) {
+          this.loadSubscriptionInfo()
+        } else {
+          this.subscriptionInfo = null
+        }
+      },
+      immediate: true,
+    },
+    'newsletter.newsletterId'() {
+      if (this.isOpen) this.loadSubscriptionInfo()
+    },
+  },
   methods: {
+    async loadSubscriptionInfo() {
+      // 비로그인이면 호출 안 함 (백엔드 401 회피 + 의미 없음).
+      // 로그인 사용자만 자신의 앱 내 구독 상태를 조회한다 — 티켓정제 02 L240.
+      if (!this.authStore.isLoggedIn || !this.newsletter) {
+        this.subscriptionInfo = null
+        return
+      }
+      this.loadingSubscription = true
+      try {
+        this.subscriptionInfo = await newsletterApi.fetchSubscriptionInfo(this.newsletter.newsletterId)
+      } catch {
+        // 401은 인터셉터가 store clear. 그 외 에러는 토스트만.
+        // 액션 영역은 '구독 상태 확인 중' 비활성으로 남음.
+        this.subscriptionInfo = null
+        this.toastStore.error('구독 상태를 불러오지 못했습니다.')
+      } finally {
+        this.loadingSubscription = false
+      }
+    },
     onPrimaryClick() {
       const action = this.primaryAction?.action
       if (action === 'login') {
-        // 비로그인 사용자 — 로그인 페이지로 이동.
         this.close()
         this.$router.push({ name: 'login' })
         return
       }
-      if (action === 'subscribe') {
-        // 추후 axios.post(`/api/v1/newsletters/${id}/subscription`)로 교체.
-        // 응답 result에 따라 외부 구독 페이지 이동 + 수신 주소 클립보드 복사 + 토스트로 분기.
-        this.toastStore.info('구독 요청은 백엔드 연동 후 활성화됩니다.')
+      if (action === 'subscribe-external') {
+        this.openExternalSubscribePage()
+        return
+      }
+      if (action === 'resubscribe') {
+        this.resubscribe()
+        return
+      }
+    },
+    openExternalSubscribePage() {
+      // status === 'NONE'에서만 호출됨 — 도메인 invariant상 externalSubscribeUrl 있음.
+      const url = this.subscriptionInfo?.externalSubscribeUrl
+      if (!url) {
+        this.toastStore.error('외부 구독 URL이 응답에 없습니다.')
+        return
+      }
+      // 회원 수신주소를 토스트로 안내 — 사용자가 외부 페이지에 직접 입력.
+      // (자동 클립보드 복사는 권한·HTTPS 의존성 있음. 다음 사이클 검토)
+      const inboxAddress = this.authStore.member?.newsletterInboxAddress
+      if (inboxAddress) {
+        this.toastStore.info(`수신주소: ${inboxAddress} — 외부 페이지에서 이 주소로 구독해주세요.`)
+      }
+      // noopener: 외부 페이지가 window.opener를 통해 우리 탭을 조작하지 못하게 차단.
+      window.open(url, '_blank', 'noopener,noreferrer')
+    },
+    async resubscribe() {
+      if (this.submitting) return
+      this.submitting = true
+      try {
+        await newsletterApi.resubscribe(this.newsletter.newsletterId)
+        // 낙관적 갱신 — 백엔드 PATCH가 멱등이고 응답 바디 없음(204).
+        // 다시 GET 호출하지 않고 즉시 ACTIVE로 반영.
+        this.subscriptionInfo = { status: 'ACTIVE', externalSubscribeUrl: null }
+        this.toastStore.info('다시 구독했습니다.')
+      } catch {
+        this.toastStore.error('재구독에 실패했습니다.')
+      } finally {
+        this.submitting = false
       }
     },
     close() {
@@ -88,7 +174,13 @@ export default {
       <!-- 헤더: 로고 + 이름 + 카테고리 -->
       <div class="d-flex align-center px-6 mb-4">
         <v-avatar size="56" rounded="md" class="mr-4">
-          <v-img :src="newsletter.imageUrl" :alt="newsletter.name" />
+          <v-img :src="newsletter.imageUrl" :alt="newsletter.name">
+            <template #error>
+              <div class="image-fallback">
+                {{ newsletter.name.slice(0, 2) }}
+              </div>
+            </template>
+          </v-img>
         </v-avatar>
         <div class="flex-grow-1">
           <h2 class="text-h6 font-weight-bold mb-0">{{ newsletter.name }}</h2>
@@ -100,12 +192,14 @@ export default {
         </div>
       </div>
 
-      <!-- 주요 액션: 구독하기 버튼 -->
+      <!-- 주요 액션: 구독 버튼 (status별 분기 — primaryAction computed 참고) -->
       <div class="px-6 mb-4">
         <v-btn
+          v-if="primaryAction"
           :color="primaryAction.color"
           :variant="primaryAction.variant"
-          :disabled="primaryAction.disabled"
+          :disabled="primaryAction.disabled || submitting"
+          :loading="submitting"
           block
           size="large"
           @click="onPrimaryClick"
@@ -196,5 +290,18 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 이미지 로드 실패 시 fallback (외부 호스트 hotlink·dead URL 대응) */
+.image-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #757575;
+  font-weight: 600;
+  font-size: 16px;
 }
 </style>
