@@ -50,7 +50,7 @@ CLAUDE.md
 
 ### Docs ###
 docs/*
-!docs/기술정리/
-docs/기술정리/*
-!docs/기술정리/데이터접근/
-!docs/기술정리/데이터접근/**
+
+### Frontend ###
+frontend/.vite/
+

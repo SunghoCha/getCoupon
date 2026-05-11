@@ -1,6 +1,7 @@
 package com.sungho.letterpick.newsletter.domain;
 
 import com.sungho.letterpick.common.domain.Email;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class NewsletterFixture {
 
@@ -18,5 +19,11 @@ public class NewsletterFixture {
                 "https://example.com",
                 new Email("test-" + Integer.toUnsignedString(title.hashCode(), 36) + "@newsletter.example.com")
         );
+    }
+
+    public static Newsletter createNewsletterWithId(Long newsletterId) {
+        Newsletter newsletter = createNewsletter("테스트 뉴스레터" + newsletterId, NewsletterCategory.TECH);
+        ReflectionTestUtils.setField(newsletter, "id", newsletterId);
+        return newsletter;
     }
 }
