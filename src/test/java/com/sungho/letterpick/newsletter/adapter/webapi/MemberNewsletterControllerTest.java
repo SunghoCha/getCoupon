@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,12 +63,8 @@ class MemberNewsletterControllerTest {
 
         mockMvc.perform(get("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
                 .andExpect(status().isOk())
-                .andExpect(content().json("""
-                        {
-                          "status": "ACTIVE",
-                          "externalSubscribeUrl": null
-                        }
-                        """));
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.externalSubscribeUrl").isEmpty());
 
         verify(memberNewsletterFinder).findSubscriptionInfo(42L, 7L);
     }
@@ -83,12 +78,8 @@ class MemberNewsletterControllerTest {
 
         mockMvc.perform(get("/api/v1/me/newsletter-subscriptions/{newsletterId}", 7L))
                 .andExpect(status().isOk())
-                .andExpect(content().json("""
-                        {
-                          "status": "UNSUBSCRIBED",
-                          "externalSubscribeUrl": null
-                        }
-                        """));
+                .andExpect(jsonPath("$.status").value("UNSUBSCRIBED"))
+                .andExpect(jsonPath("$.externalSubscribeUrl").isEmpty());
 
         verify(memberNewsletterFinder).findSubscriptionInfo(42L, 7L);
     }

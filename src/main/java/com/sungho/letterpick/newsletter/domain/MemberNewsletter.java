@@ -61,6 +61,10 @@ public class MemberNewsletter {
     }
 
     public boolean isUnsubscribed() {
-        return this.status == MemberNewsletterStatus.UNSUBSCRIBED;
+        return this.status == UNSUBSCRIBED;
+    }
+
+    public boolean isActive() {
+        return this.status == ACTIVE;
     }
 }
