@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NewsletterCategoryQueryService implements NewsletterCategoryFinder {
 
-    @Override
+    @Override // TODO : 메서드명 점검
     public List<NewsletterCategoryItem> find() {
         return Arrays.stream(NewsletterCategory.values())
                 .map(NewsletterCategoryItem::from)

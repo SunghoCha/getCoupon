@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasAuthority(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers("/api/v1/auth/signup").hasAuthority(ROLE_PENDING_SIGNUP)
+                        .requestMatchers("/api/v1/me/**").hasAuthority(ROLE_USER)
                         .requestMatchers("/api/v1/members/**").hasAuthority(ROLE_USER)
                         .anyRequest().authenticated()
                 )
