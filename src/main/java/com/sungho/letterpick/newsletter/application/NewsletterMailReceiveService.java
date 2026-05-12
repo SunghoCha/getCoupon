@@ -24,6 +24,7 @@ public class NewsletterMailReceiveService {
     private final NewslettersRepository newslettersRepository;
     private final MemberNewsletterRepository memberNewsletterRepository;
     private final NewsletterIssueRepository newsletterIssueRepository;
+    private final NewsletterIssuePreviewGenerator newsletterIssuePreviewGenerator;
 
     public void receive(ReceivedMail receivedMail) {
         if (inboundEmailRepository.existsByMessageKey(receivedMail.messageKey())) return;
@@ -90,12 +91,14 @@ public class NewsletterMailReceiveService {
     }
 
     private void completeIssueCreation(Long memberId, Long newsletterId, String content, InboundEmail inboundEmail) {
+        String previewText = newsletterIssuePreviewGenerator.generate(content);
         NewsletterIssue newsletterIssue = NewsletterIssue.create(
                 memberId,
                 newsletterId,
                 inboundEmail.getId(),
                 inboundEmail.getSubject(),
                 content,
+                previewText,
                 inboundEmail.getReceivedAt()
         );
         newsletterIssueRepository.save(newsletterIssue);

@@ -42,6 +42,9 @@ class NewsletterMailReceiveServiceTest {
     @Mock
     private NewsletterIssueRepository newsletterIssueRepository;
 
+    @Mock
+    private NewsletterIssuePreviewGenerator newsletterIssuePreviewGenerator;
+
     @Test
     @DisplayName("새로운 receivedMail이 들어오면 수신 이력이 저장된다")
     void receive_saves_inbound_email() {
@@ -154,6 +157,7 @@ class NewsletterMailReceiveServiceTest {
         Long memberId = 1L;
         Long newsletterId = 2L;
         Long inboundEmailId = 100L;
+        String previewText = "뉴스레터 본문 미리보기";
         ReceivedMail receivedMail = ReceivedMailFixture.create();
 
         given(inboundEmailRepository.save(any(InboundEmail.class)))
@@ -173,6 +177,8 @@ class NewsletterMailReceiveServiceTest {
         MemberNewsletter memberNewsletter = MemberNewsletter.create(memberId, newsletterId);
         given(memberNewsletterRepository.findByMemberIdAndNewsletterId(memberId, newsletterId))
                 .willReturn(Optional.of(memberNewsletter));
+        given(newsletterIssuePreviewGenerator.generate(receivedMail.content()))
+                .willReturn(previewText);
         // when
         newsletterMailReceiveService.receive(receivedMail);
         // then
@@ -181,6 +187,7 @@ class NewsletterMailReceiveServiceTest {
         verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
         verify(memberNewsletterRepository).findByMemberIdAndNewsletterId(memberId, newsletterId);
+        verify(newsletterIssuePreviewGenerator).generate(receivedMail.content());
 
         InboundEmail inboundEmail = captor.getValue();
         assertThat(inboundEmail.getStatus()).isEqualTo(InboundEmailStatus.ISSUE_CREATED);
@@ -195,6 +202,7 @@ class NewsletterMailReceiveServiceTest {
         assertThat(newsletterIssue.getInboundEmailId()).isEqualTo(inboundEmailId);
         assertThat(newsletterIssue.getSubject()).isEqualTo(receivedMail.subject());
         assertThat(newsletterIssue.getContent()).isEqualTo(receivedMail.content());
+        assertThat(newsletterIssue.getPreviewText()).isEqualTo(previewText);
         assertThat(newsletterIssue.getReceivedAt()).isEqualTo(receivedMail.receivedAt());
         assertThat(newsletterIssue.isRead()).isFalse();
         assertThat(newsletterIssue.isDeleted()).isFalse();
@@ -207,6 +215,7 @@ class NewsletterMailReceiveServiceTest {
         Long memberId = 1L;
         Long newsletterId = 2L;
         Long inboundEmailId = 100L;
+        String previewText = "뉴스레터 본문 미리보기";
         ReceivedMail receivedMail = ReceivedMailFixture.create();
         given(inboundEmailRepository.save(any(InboundEmail.class)))
                 .willAnswer(invocation -> {
@@ -224,6 +233,9 @@ class NewsletterMailReceiveServiceTest {
 
         given(memberNewsletterRepository.findByMemberIdAndNewsletterId(memberId, newsletterId))
                 .willReturn(Optional.empty());
+
+        given(newsletterIssuePreviewGenerator.generate(receivedMail.content()))
+                .willReturn(previewText);
         // when
         newsletterMailReceiveService.receive(receivedMail);
         // then
@@ -232,6 +244,7 @@ class NewsletterMailReceiveServiceTest {
         verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
         verify(memberNewsletterRepository).findByMemberIdAndNewsletterId(memberId, newsletterId);
+        verify(newsletterIssuePreviewGenerator).generate(receivedMail.content());
 
         InboundEmail inboundEmail = captor.getValue();
         assertThat(inboundEmail.getStatus()).isEqualTo(InboundEmailStatus.ISSUE_CREATED);
@@ -255,6 +268,7 @@ class NewsletterMailReceiveServiceTest {
         assertThat(newsletterIssue.getInboundEmailId()).isEqualTo(inboundEmailId);
         assertThat(newsletterIssue.getSubject()).isEqualTo(receivedMail.subject());
         assertThat(newsletterIssue.getContent()).isEqualTo(receivedMail.content());
+        assertThat(newsletterIssue.getPreviewText()).isEqualTo(previewText);
         assertThat(newsletterIssue.getReceivedAt()).isEqualTo(receivedMail.receivedAt());
         assertThat(newsletterIssue.isRead()).isFalse();
         assertThat(newsletterIssue.isDeleted()).isFalse();

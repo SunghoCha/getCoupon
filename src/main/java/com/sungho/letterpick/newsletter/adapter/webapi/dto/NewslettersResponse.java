@@ -25,11 +25,7 @@ public record NewslettersResponse(
                 newsletters.getContent().stream()
                         .map(NewsletterResponse::from)
                         .toList(),
-                new PageResponse(
-                        newsletters.getNumber(),
-                        newsletters.getSize(),
-                        newsletters.hasNext()
-                )
+                PageResponse.from(newsletters)
         );
     }
 
@@ -65,10 +61,4 @@ public record NewslettersResponse(
         }
     }
 
-    public record PageResponse(
-            int number,
-            int size,
-            boolean hasNext
-    ) {
-    }
 }
