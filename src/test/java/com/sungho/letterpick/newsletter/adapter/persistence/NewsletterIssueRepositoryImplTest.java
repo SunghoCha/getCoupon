@@ -1,6 +1,7 @@
 package com.sungho.letterpick.newsletter.adapter.persistence;
 
 import com.sungho.letterpick.LetterPickTestConfiguration;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueSearchCondition;
 import com.sungho.letterpick.newsletter.domain.MemberNewsletter;
@@ -149,6 +150,64 @@ class NewsletterIssueRepositoryImplTest {
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.hasNext()).isTrue();
+    }
+
+    @Test
+    @DisplayName("회원의 삭제되지 않은 이슈 상세를 뉴스레터 정보와 함께 조회한다")
+    void findDetailByMemberIdAndIssueId_returns_issue_detail_with_newsletter_info() {
+        // given
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+
+        Newsletter newsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("상세 뉴스레터", NewsletterCategory.TECH)
+        );
+
+        NewsletterIssue targetIssue = createIssue(
+                memberId,
+                newsletter.getId(),
+                10L,
+                "상세 이슈",
+                "상세 본문",
+                "상세 미리보기",
+                Instant.parse("2050-05-12T01:00:00Z")
+        );
+        targetIssue.markRead();
+        newsletterIssueRepository.save(targetIssue);
+
+        newsletterIssueRepository.save(
+                createIssue(memberId, newsletter.getId(), 11L, "다른 이슈",
+                        "다른 본문", "다른 미리보기", Instant.parse("2050-05-12T02:00:00Z"))
+        );
+        newsletterIssueRepository.save(
+                createIssue(otherMemberId, newsletter.getId(), 12L, "다른 회원 이슈",
+                        "다른 회원 본문", "다른 회원 미리보기", Instant.parse("2050-05-12T03:00:00Z"))
+        );
+
+        NewsletterIssue deletedIssue = createIssue(memberId, newsletter.getId(), 13L, "삭제된 이슈",
+                "삭제된 본문", "삭제된 미리보기", Instant.parse("2050-05-12T04:00:00Z"));
+        deletedIssue.deleteFromList();
+        newsletterIssueRepository.save(deletedIssue);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        NewsletterIssueDetail detail = newsletterIssueRepository
+                .findDetailByMemberIdAndIssueId(memberId, targetIssue.getId())
+                .orElseThrow();
+
+        // then
+        assertThat(detail.issueId()).isEqualTo(targetIssue.getId());
+        assertThat(detail.newsletterId()).isEqualTo(newsletter.getId());
+        assertThat(detail.newsletterName()).isEqualTo(newsletter.getName());
+        assertThat(detail.newsletterImageUrl()).isEqualTo(newsletter.getImageUrl());
+        assertThat(detail.subject()).isEqualTo("상세 이슈");
+        assertThat(detail.content()).isEqualTo("상세 본문");
+        assertThat(detail.receivedAt()).isEqualTo(Instant.parse("2050-05-12T01:00:00Z"));
+        assertThat(detail.read()).isTrue();
+        assertThat(newsletterIssueRepository.findDetailByMemberIdAndIssueId(otherMemberId, targetIssue.getId())).isEmpty();
+        assertThat(newsletterIssueRepository.findDetailByMemberIdAndIssueId(memberId, deletedIssue.getId())).isEmpty();
     }
 
     private NewsletterIssue createIssue(Long memberId, Long newsletterId, Long inboundEmailId,

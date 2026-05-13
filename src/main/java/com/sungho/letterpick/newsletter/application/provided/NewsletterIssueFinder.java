@@ -5,4 +5,5 @@ import org.springframework.data.domain.Slice;
 
 public interface NewsletterIssueFinder {
     Slice<NewsletterIssueItem> findTodayIssues(Long memberId, Pageable pageable);
+    NewsletterIssueDetail readIssueDetail(Long memberId, Long issueId);
 }
