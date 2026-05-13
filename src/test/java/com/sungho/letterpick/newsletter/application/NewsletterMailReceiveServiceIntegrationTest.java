@@ -20,7 +20,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@Import({LetterPickTestConfiguration.class, RecipientAddressResolver.class, NewsletterMailReceiveService.class})
+@Import({
+        LetterPickTestConfiguration.class,
+        RecipientAddressResolver.class,
+        NewsletterMailReceiveService.class,
+        NewsletterIssuePreviewGenerator.class
+})
 class NewsletterMailReceiveServiceIntegrationTest {
 
     @Autowired

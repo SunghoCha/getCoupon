@@ -1,0 +1,12 @@
+package com.sungho.letterpick.newsletter.adapter.persistence;
+
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueSearchCondition;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+
+public interface CustomNewsletterIssueRepository {
+    Slice<NewsletterIssueItem> findAllByMemberId(Long memberId,
+                                                 NewsletterIssueSearchCondition condition,
+                                                 Pageable pageable);
+}

@@ -37,6 +37,9 @@ public class NewsletterIssue {
     @Column(nullable = false)
     private String content;
 
+    @Column(nullable = false, length = 120)
+    private String previewText;
+
     @Column(nullable = false)
     private Instant receivedAt;
 
@@ -47,21 +50,22 @@ public class NewsletterIssue {
     private boolean deleted;
 
     private NewsletterIssue(Long memberId, Long newsletterId, Long inboundEmailId,
-                            String subject, String content, Instant receivedAt) {
+                            String subject, String content, String previewText, Instant receivedAt) {
         this.memberId = requireNonNull(memberId);
         this.newsletterId = requireNonNull(newsletterId);
         this.inboundEmailId = requireNonNull(inboundEmailId);
         this.subject = requireNonNull(subject);
         this.content = requireNonNull(content);
+        this.previewText = requireNonNull(previewText);
         this.receivedAt = requireNonNull(receivedAt);
         this.read = false;
         this.deleted = false;
     }
 
     public static NewsletterIssue create(Long memberId, Long newsletterId, Long inboundEmailId,
-                                         String subject, String content, Instant receivedAt) {
+                                         String subject, String content, String previewText, Instant receivedAt) {
         return new NewsletterIssue(memberId, newsletterId, inboundEmailId,
-                                   subject, content, receivedAt);
+                                   subject, content, previewText, receivedAt);
     }
 
     public void markRead() {
