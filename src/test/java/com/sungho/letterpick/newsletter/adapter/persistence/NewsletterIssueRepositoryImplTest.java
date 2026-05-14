@@ -153,6 +153,67 @@ class NewsletterIssueRepositoryImplTest {
     }
 
     @Test
+    @DisplayName("날짜 조건이 없으면 회원의 삭제되지 않은 활성 구독 이슈를 날짜 제한 없이 조회한다")
+    void findAllByMemberId_returns_active_subscription_issues_without_received_at_range() {
+        // given
+        Long memberId = 1L;
+        Long otherMemberId = 2L;
+
+        Newsletter newsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("보관함 뉴스레터", NewsletterCategory.TECH)
+        );
+        Newsletter unsubscribedNewsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("구독 해지 뉴스레터", NewsletterCategory.BIZ)
+        );
+
+        memberNewsletterRepository.save(MemberNewsletter.create(memberId, newsletter.getId()));
+        memberNewsletterRepository.save(MemberNewsletter.create(otherMemberId, newsletter.getId()));
+
+        MemberNewsletter unsubscribedMemberNewsletter = MemberNewsletter.create(memberId, unsubscribedNewsletter.getId());
+        unsubscribedMemberNewsletter.unsubscribe();
+        memberNewsletterRepository.save(unsubscribedMemberNewsletter);
+
+        NewsletterIssue oldIssue = newsletterIssueRepository.save(
+                createIssue(memberId, newsletter.getId(), 20L, "오래된 보관함 이슈",
+                        "오래된 본문", "오래된 미리보기", Instant.parse("2049-01-01T00:00:00Z"))
+        );
+        NewsletterIssue latestIssue = newsletterIssueRepository.save(
+                createIssue(memberId, newsletter.getId(), 21L, "최신 보관함 이슈",
+                        "최신 본문", "최신 미리보기", Instant.parse("2050-05-12T01:00:00Z"))
+        );
+        newsletterIssueRepository.save(
+                createIssue(otherMemberId, newsletter.getId(), 22L, "다른 회원 이슈",
+                        "다른 회원 본문", "다른 회원 미리보기", Instant.parse("2050-05-12T02:00:00Z"))
+        );
+        newsletterIssueRepository.save(
+                createIssue(memberId, unsubscribedNewsletter.getId(), 23L, "구독 해지 이슈",
+                        "구독 해지 본문", "구독 해지 미리보기", Instant.parse("2050-05-12T03:00:00Z"))
+        );
+
+        NewsletterIssue deletedIssue = createIssue(memberId, newsletter.getId(), 24L, "삭제된 이슈",
+                "삭제된 본문", "삭제된 미리보기", Instant.parse("2050-05-12T04:00:00Z"));
+        deletedIssue.deleteFromList();
+        newsletterIssueRepository.save(deletedIssue);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Slice<NewsletterIssueItem> result = newsletterIssueRepository.findAllByMemberId(
+                memberId,
+                NewsletterIssueSearchCondition.empty(),
+                PageRequest.of(0, 10)
+        );
+
+        // then
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.getContent())
+                .extracting(NewsletterIssueItem::issueId)
+                .containsExactly(latestIssue.getId(), oldIssue.getId());
+    }
+
+    @Test
     @DisplayName("회원의 삭제되지 않은 이슈 상세를 뉴스레터 정보와 함께 조회한다")
     void findDetailByMemberIdAndIssueId_returns_issue_detail_with_newsletter_info() {
         // given

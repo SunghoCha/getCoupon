@@ -61,4 +61,35 @@ class NewsletterIssueQueryServiceTest {
         assertThat(condition.receivedTo()).isEqualTo(Instant.parse("2050-05-12T15:00:00Z"));
         assertThat(result).isSameAs(expectedResult);
     }
+
+    @Test
+    @DisplayName("보관함 이슈 조회는 날짜 조건 없이 회원의 뉴스레터 이슈를 조회한다")
+    void findIssues_queries_member_issues_without_received_at_range() {
+        // given
+        Long memberId = 1L;
+        Pageable pageable = PageRequest.of(0, 20);
+        Clock clock = Clock.fixed(Instant.parse("2050-05-12T03:00:00Z"), ZoneOffset.UTC);
+        NewsletterIssueQueryService newsletterIssueQueryService =
+                new NewsletterIssueQueryService(newsletterIssueRepository, clock);
+        Slice<NewsletterIssueItem> expectedResult = new SliceImpl<>(List.of(), pageable, false);
+
+        given(newsletterIssueRepository.findAllByMemberId(
+                eq(memberId),
+                any(NewsletterIssueSearchCondition.class),
+                eq(pageable)
+        )).willReturn(expectedResult);
+
+        // when
+        Slice<NewsletterIssueItem> result = newsletterIssueQueryService.findIssues(memberId, pageable);
+
+        // then
+        ArgumentCaptor<NewsletterIssueSearchCondition> conditionCaptor =
+                ArgumentCaptor.forClass(NewsletterIssueSearchCondition.class);
+        verify(newsletterIssueRepository).findAllByMemberId(eq(memberId), conditionCaptor.capture(), eq(pageable));
+
+        NewsletterIssueSearchCondition condition = conditionCaptor.getValue();
+        assertThat(condition.receivedFrom()).isNull();
+        assertThat(condition.receivedTo()).isNull();
+        assertThat(result).isSameAs(expectedResult);
+    }
 }

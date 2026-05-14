@@ -91,6 +91,38 @@ class NewsletterIssueControllerSecurityTest {
     }
 
     @Test
+    @DisplayName("익명 사용자가 보관함 뉴스레터 이슈 목록 조회 시 401")
+    void getIssues_returns_401_for_anonymous() throws Exception {
+        mockMvc.perform(get("/api/v1/me/newsletter-issues"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(newsletterIssueFinder);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L, authorities = {ROLE_PENDING_SIGNUP})
+    @DisplayName("가입 대기 사용자가 보관함 뉴스레터 이슈 목록 조회 시 403")
+    void getIssues_returns_403_for_pending_signup_user() throws Exception {
+        mockMvc.perform(get("/api/v1/me/newsletter-issues"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(newsletterIssueFinder);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("인증 사용자가 보관함 뉴스레터 이슈 목록 조회 시 권한 통과")
+    void getIssues_passes_for_authenticated() throws Exception {
+        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 20), false));
+
+        mockMvc.perform(get("/api/v1/me/newsletter-issues"))
+                .andExpect(status().isOk());
+
+        verify(newsletterIssueFinder).findIssues(eq(42L), any(Pageable.class));
+    }
+
+    @Test
     @DisplayName("익명 사용자가 뉴스레터 이슈 상세 조회 시 401")
     void getIssueDetail_returns_401_for_anonymous() throws Exception {
         mockMvc.perform(get("/api/v1/me/newsletter-issues/{issueId}", 10L))

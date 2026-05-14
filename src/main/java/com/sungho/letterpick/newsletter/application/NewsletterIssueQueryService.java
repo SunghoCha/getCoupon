@@ -36,6 +36,11 @@ public class NewsletterIssueQueryService implements NewsletterIssueFinder {
     }
 
     @Override
+    public Slice<NewsletterIssueItem> findIssues(Long memberId, Pageable pageable) {
+        return newsletterIssueRepository.findAllByMemberId(memberId, NewsletterIssueSearchCondition.empty(), pageable);
+    }
+
+    @Override
     @Transactional // 상세 조회는 읽음 처리까지 수행하므로 클래스 기본 readOnly 트랜잭션을 사용하지 않는다.
     public NewsletterIssueDetail readIssueDetail(Long memberId, Long issueId) {
         NewsletterIssue newsletterIssue = newsletterIssueRepository
@@ -53,6 +58,6 @@ public class NewsletterIssueQueryService implements NewsletterIssueFinder {
         Instant receivedFrom = today.atStartOfDay(TODAY_ZONE).toInstant();
         Instant receivedTo = today.plusDays(1).atStartOfDay(TODAY_ZONE).toInstant();
 
-        return new NewsletterIssueSearchCondition(receivedFrom, receivedTo);
+        return NewsletterIssueSearchCondition.receivedAtRange(receivedFrom, receivedTo);
     }
 }

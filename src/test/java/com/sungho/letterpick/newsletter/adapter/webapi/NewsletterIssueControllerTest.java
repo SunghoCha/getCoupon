@@ -114,6 +114,70 @@ class NewsletterIssueControllerTest {
 
     @Test
     @WithLoginUser(memberId = 42L)
+    @DisplayName("보관함 뉴스레터 이슈 조회 요청 시 200과 이슈 목록 페이지 응답이 반환된다")
+    void getIssues_returns_200_and_newsletter_issue_page_response() throws Exception {
+        // given
+        PageRequest pageable = PageRequest.of(0, 20);
+        List<NewsletterIssueItem> issues = List.of(
+                new NewsletterIssueItem(
+                        20L,
+                        2L,
+                        "Archive Letter",
+                        "https://example.com/archive.png",
+                        "보관함 뉴스레터",
+                        "보관함 미리보기",
+                        Instant.parse("2050-05-10T01:00:00Z"),
+                        true
+                )
+        );
+        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(issues, pageable, true));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/me/newsletter-issues"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].issueId").value(20L))
+                .andExpect(jsonPath("$.items[0].newsletterId").value(2L))
+                .andExpect(jsonPath("$.items[0].newsletterName").value("Archive Letter"))
+                .andExpect(jsonPath("$.items[0].newsletterImageUrl").value("https://example.com/archive.png"))
+                .andExpect(jsonPath("$.items[0].subject").value("보관함 뉴스레터"))
+                .andExpect(jsonPath("$.items[0].previewText").value("보관함 미리보기"))
+                .andExpect(jsonPath("$.items[0].receivedAt").value("2050-05-10T01:00:00Z"))
+                .andExpect(jsonPath("$.items[0].read").value(true))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(20))
+                .andExpect(jsonPath("$.page.hasNext").value(true));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(newsletterIssueFinder).findIssues(eq(42L), pageableCaptor.capture());
+
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(0);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("보관함에 표시할 뉴스레터 이슈가 없으면 빈 목록 페이지 응답이 반환된다")
+    void getIssues_returns_empty_items_when_archive_issues_do_not_exist() throws Exception {
+        // given
+        PageRequest pageable = PageRequest.of(0, 20);
+        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(List.of(), pageable, false));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/me/newsletter-issues"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(0))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.size").value(20))
+                .andExpect(jsonPath("$.page.hasNext").value(false));
+
+        verify(newsletterIssueFinder).findIssues(eq(42L), any(Pageable.class));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
     @DisplayName("뉴스레터 이슈 상세 조회 요청 시 200과 상세 응답이 반환된다")
     void getIssueDetail_returns_200_and_newsletter_issue_detail_response() throws Exception {
         // given
