@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface NewsletterIssueRepository extends JpaRepository<NewsletterIssue, Long>, CustomNewsletterIssueRepository {
     Optional<NewsletterIssue> findByInboundEmailId(Long inboundEmailId);
+    Optional<NewsletterIssue> findByIdAndMemberIdAndDeletedFalse(Long issueId, Long memberId);
 }

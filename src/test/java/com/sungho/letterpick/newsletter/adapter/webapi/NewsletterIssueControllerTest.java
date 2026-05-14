@@ -2,8 +2,10 @@ package com.sungho.letterpick.newsletter.adapter.webapi;
 
 import com.sungho.letterpick.common.auth.WithLoginUser;
 import com.sungho.letterpick.common.config.WebMvcConfig;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueFinder;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
+import com.sungho.letterpick.newsletter.domain.exception.NewsletterIssueNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -102,5 +104,54 @@ class NewsletterIssueControllerTest {
                 .andExpect(jsonPath("$.page.hasNext").value(false));
 
         verify(newsletterIssueFinder).findTodayIssues(eq(42L), any(Pageable.class));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("뉴스레터 이슈 상세 조회 요청 시 200과 상세 응답이 반환된다")
+    void getIssueDetail_returns_200_and_newsletter_issue_detail_response() throws Exception {
+        // given
+        NewsletterIssueDetail detail = new NewsletterIssueDetail(
+                10L,
+                1L,
+                "Example Letter",
+                "https://example.com/image.png",
+                "뉴스레터 제목",
+                "<p>뉴스레터 본문</p>",
+                Instant.parse("2050-05-12T01:00:00Z"),
+                true
+        );
+        given(newsletterIssueFinder.readIssueDetail(42L, 10L))
+                .willReturn(detail);
+
+        // when & then
+        mockMvc.perform(get("/api/v1/me/newsletter-issues/{issueId}", 10L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issueId").value(10L))
+                .andExpect(jsonPath("$.newsletterId").value(1L))
+                .andExpect(jsonPath("$.newsletterName").value("Example Letter"))
+                .andExpect(jsonPath("$.newsletterImageUrl").value("https://example.com/image.png"))
+                .andExpect(jsonPath("$.subject").value("뉴스레터 제목"))
+                .andExpect(jsonPath("$.content").value("<p>뉴스레터 본문</p>"))
+                .andExpect(jsonPath("$.receivedAt").value("2050-05-12T01:00:00Z"))
+                .andExpect(jsonPath("$.read").value(true));
+
+        verify(newsletterIssueFinder).readIssueDetail(42L, 10L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("뉴스레터 이슈 상세 조회 시 이슈를 찾지 못하면 404가 반환된다")
+    void getIssueDetail_returns_404_when_newsletter_issue_not_found() throws Exception {
+        // given
+        given(newsletterIssueFinder.readIssueDetail(42L, 999L))
+                .willThrow(new NewsletterIssueNotFoundException());
+
+        // when & then
+        mockMvc.perform(get("/api/v1/me/newsletter-issues/{issueId}", 999L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NWL-003"));
+
+        verify(newsletterIssueFinder).readIssueDetail(42L, 999L);
     }
 }

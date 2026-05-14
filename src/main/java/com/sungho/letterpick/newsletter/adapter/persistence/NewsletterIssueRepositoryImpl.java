@@ -3,6 +3,7 @@ package com.sungho.letterpick.newsletter.adapter.persistence;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueSearchCondition;
 import com.sungho.letterpick.newsletter.domain.MemberNewsletterStatus;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.SliceImpl;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -68,6 +70,36 @@ public class NewsletterIssueRepositoryImpl implements CustomNewsletterIssueRepos
         List<NewsletterIssueItem> content = hasNext ? results.subList(0, pageable.getPageSize()) : results;
 
         return new SliceImpl<>(content, pageable, hasNext);
+    }
+
+    @Override
+    public Optional<NewsletterIssueDetail> findDetailByMemberIdAndIssueId(Long memberId, Long issueId) {
+        requireNonNull(memberId);
+        requireNonNull(issueId);
+
+        NewsletterIssueDetail detail = jpaQueryFactory
+                .select(Projections.constructor(
+                        NewsletterIssueDetail.class,
+                        newsletterIssue.id,
+                        newsletterIssue.newsletterId,
+                        newsletter.name,
+                        newsletter.imageUrl,
+                        newsletterIssue.subject,
+                        newsletterIssue.content,
+                        newsletterIssue.receivedAt,
+                        newsletterIssue.read
+                ))
+                .from(newsletterIssue)
+                .join(newsletter)
+                .on(newsletter.id.eq(newsletterIssue.newsletterId))
+                .where(
+                        newsletterIssue.memberId.eq(memberId),
+                        newsletterIssue.id.eq(issueId),
+                        newsletterIssue.deleted.isFalse()
+                )
+                .fetchOne();
+
+        return Optional.ofNullable(detail);
     }
 
     private BooleanExpression receivedAtLt(Instant receivedTo) {
