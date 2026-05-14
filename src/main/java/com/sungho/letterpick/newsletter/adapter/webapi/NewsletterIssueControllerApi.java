@@ -31,4 +31,14 @@ public interface NewsletterIssueControllerApi {
             @ApiResponse(responseCode = "404", description = "이슈 없음")
     })
     NewsletterIssueDetailResponse getIssueDetail(LoginUser loginUser, Long issueId);
+
+    @Operation(
+            summary = "뉴스레터 이슈 삭제",
+            description = "로그인한 회원이 자신의 뉴스레터 이슈를 삭제 처리한다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "삭제 성공"),
+            @ApiResponse(responseCode = "404", description = "이슈 없음")
+    })
+    void deleteIssue(LoginUser loginUser, Long issueId);
 }
