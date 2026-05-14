@@ -34,6 +34,16 @@ public class NewsletterIssueController implements NewsletterIssueControllerApi {
     }
 
     @Override
+    @GetMapping
+    public NewsletterIssuesResponse getIssues(
+            @CurrentUser LoginUser loginUser,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Slice<NewsletterIssueItem> issueItems = newsletterIssueFinder.findIssues(loginUser.memberId(), pageable);
+        return NewsletterIssuesResponse.from(issueItems);
+    }
+
+    @Override
     @GetMapping("/{issueId}")
     public NewsletterIssueDetailResponse getIssueDetail(@CurrentUser LoginUser loginUser,
                                                         @PathVariable("issueId") Long issueId) {
