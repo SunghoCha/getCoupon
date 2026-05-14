@@ -5,6 +5,7 @@ import com.sungho.letterpick.common.config.WebMvcConfig;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueFinder;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueModifier;
 import com.sungho.letterpick.newsletter.domain.exception.NewsletterIssueNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,6 +44,9 @@ class NewsletterIssueControllerTest {
 
     @MockitoBean
     NewsletterIssueFinder newsletterIssueFinder;
+
+    @MockitoBean
+    NewsletterIssueModifier newsletterIssueModifier;
 
     @Test
     @WithLoginUser(memberId = 42L)
@@ -153,5 +159,33 @@ class NewsletterIssueControllerTest {
                 .andExpect(jsonPath("$.code").value("NWL-003"));
 
         verify(newsletterIssueFinder).readIssueDetail(42L, 999L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("뉴스레터 이슈 삭제 요청 시 204가 반환된다")
+    void deleteIssue_returns_204_when_newsletter_issue_deleted() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L))
+                .andExpect(status().isNoContent());
+
+        verify(newsletterIssueModifier).delete(42L, 10L);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("뉴스레터 이슈 삭제 시 이슈를 찾지 못하면 404가 반환된다")
+    void deleteIssue_returns_404_when_newsletter_issue_not_found() throws Exception {
+        // given
+        willThrow(new NewsletterIssueNotFoundException())
+                .given(newsletterIssueModifier)
+                .delete(42L, 999L);
+
+        // when & then
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 999L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NWL-003"));
+
+        verify(newsletterIssueModifier).delete(42L, 999L);
     }
 }

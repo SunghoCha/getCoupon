@@ -9,6 +9,7 @@ import com.sungho.letterpick.member.adapter.security.OAuth2LoginFailureHandler;
 import com.sungho.letterpick.member.adapter.security.OAuth2LoginSuccessHandler;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueFinder;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueModifier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,6 +44,9 @@ class NewsletterIssueControllerSecurityTest {
 
     @MockitoBean
     NewsletterIssueFinder newsletterIssueFinder;
+
+    @MockitoBean
+    NewsletterIssueModifier newsletterIssueModifier;
 
     @MockitoBean
     CustomOidcUserService customOidcUserService;
@@ -124,5 +130,47 @@ class NewsletterIssueControllerSecurityTest {
                 .andExpect(status().isOk());
 
         verify(newsletterIssueFinder).readIssueDetail(42L, 10L);
+    }
+
+    @Test
+    @DisplayName("익명 사용자가 뉴스레터 이슈 삭제 시 401")
+    void deleteIssue_returns_401_for_anonymous() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L)
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(newsletterIssueModifier);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L, authorities = {ROLE_PENDING_SIGNUP})
+    @DisplayName("가입 대기 사용자가 뉴스레터 이슈 삭제 시 403")
+    void deleteIssue_returns_403_for_pending_signup_user() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L)
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(newsletterIssueModifier);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("인증 사용자가 CSRF 없이 뉴스레터 이슈 삭제 시 403")
+    void deleteIssue_returns_403_when_csrf_missing() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(newsletterIssueModifier);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("인증 사용자가 뉴스레터 이슈 삭제 시 권한 통과")
+    void deleteIssue_passes_for_authenticated() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L)
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(newsletterIssueModifier).delete(42L, 10L);
     }
 }

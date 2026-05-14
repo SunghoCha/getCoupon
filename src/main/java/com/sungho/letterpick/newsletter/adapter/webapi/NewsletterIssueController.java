@@ -7,14 +7,13 @@ import com.sungho.letterpick.newsletter.adapter.webapi.dto.NewsletterIssuesRespo
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueDetail;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueFinder;
 import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueItem;
+import com.sungho.letterpick.newsletter.application.provided.NewsletterIssueModifier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/api/v1/me/newsletter-issues")
 @RestController
@@ -22,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewsletterIssueController implements NewsletterIssueControllerApi {
 
     private final NewsletterIssueFinder newsletterIssueFinder;
+    private final NewsletterIssueModifier newsletterIssueModifier;
 
     @Override
     @GetMapping("/today")
@@ -39,5 +39,15 @@ public class NewsletterIssueController implements NewsletterIssueControllerApi {
                                                         @PathVariable("issueId") Long issueId) {
         NewsletterIssueDetail issueDetail = newsletterIssueFinder.readIssueDetail(loginUser.memberId(), issueId);
         return NewsletterIssueDetailResponse.from(issueDetail);
+    }
+
+    @Override
+    @DeleteMapping("/{issueId}")
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    public void deleteIssue(
+            @CurrentUser LoginUser loginUser,
+            @PathVariable("issueId") Long issueId
+    ) {
+        newsletterIssueModifier.delete(loginUser.memberId(), issueId);
     }
 }
