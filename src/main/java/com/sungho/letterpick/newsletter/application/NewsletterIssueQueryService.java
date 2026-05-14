@@ -42,6 +42,7 @@ public class NewsletterIssueQueryService implements NewsletterIssueFinder {
                 .findByIdAndMemberIdAndDeletedFalse(issueId, memberId)
                 .orElseThrow(NewsletterIssueNotFoundException::new);
         newsletterIssue.markRead();
+        newsletterIssueRepository.flush();
 
         return newsletterIssueRepository.findDetailByMemberIdAndIssueId(memberId, issueId)
                 .orElseThrow(NewsletterIssueNotFoundException::new);

@@ -91,7 +91,7 @@ public class NewsletterIssueRepositoryImpl implements CustomNewsletterIssueRepos
                 ))
                 .from(newsletterIssue)
                 .join(newsletter)
-                .on(newsletterIssue.newsletterId.eq(newsletter.id))
+                .on(newsletter.id.eq(newsletterIssue.newsletterId))
                 .where(
                         newsletterIssue.memberId.eq(memberId),
                         newsletterIssue.id.eq(issueId),
