@@ -59,6 +59,7 @@ public class NewsletterIssueRepositoryImpl implements CustomNewsletterIssueRepos
                         newsletterIssue.deleted.isFalse(),
                         receivedAtGoe(condition.receivedFrom()),
                         receivedAtLt(condition.receivedTo()),
+                        keywordContains(condition.keyword()),
                         memberNewsletter.status.eq(MemberNewsletterStatus.ACTIVE)
                 )
                 .orderBy(newsletterIssue.receivedAt.desc(), newsletterIssue.id.desc())
@@ -108,5 +109,17 @@ public class NewsletterIssueRepositoryImpl implements CustomNewsletterIssueRepos
 
     private BooleanExpression receivedAtGoe(Instant receivedFrom) {
         return receivedFrom == null ? null : newsletterIssue.receivedAt.goe(receivedFrom);
+    }
+
+    private BooleanExpression keywordContains(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+
+        String trimmedKeyword = keyword.trim();
+
+        return newsletterIssue.subject.containsIgnoreCase(trimmedKeyword)
+                .or(newsletterIssue.content.contains(trimmedKeyword))
+                .or(newsletter.name.containsIgnoreCase(trimmedKeyword));
     }
 }

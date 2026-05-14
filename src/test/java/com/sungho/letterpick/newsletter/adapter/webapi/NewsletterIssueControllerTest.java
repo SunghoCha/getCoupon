@@ -26,6 +26,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
@@ -130,7 +131,7 @@ class NewsletterIssueControllerTest {
                         true
                 )
         );
-        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+        given(newsletterIssueFinder.findIssues(eq(42L), isNull(), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(issues, pageable, true));
 
         // when & then
@@ -150,7 +151,7 @@ class NewsletterIssueControllerTest {
                 .andExpect(jsonPath("$.page.hasNext").value(true));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(newsletterIssueFinder).findIssues(eq(42L), pageableCaptor.capture());
+        verify(newsletterIssueFinder).findIssues(eq(42L), isNull(), pageableCaptor.capture());
 
         assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(0);
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
@@ -162,7 +163,7 @@ class NewsletterIssueControllerTest {
     void getIssues_returns_empty_items_when_archive_issues_do_not_exist() throws Exception {
         // given
         PageRequest pageable = PageRequest.of(0, 20);
-        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+        given(newsletterIssueFinder.findIssues(eq(42L), isNull(), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(), pageable, false));
 
         // when & then
@@ -173,7 +174,25 @@ class NewsletterIssueControllerTest {
                 .andExpect(jsonPath("$.page.size").value(20))
                 .andExpect(jsonPath("$.page.hasNext").value(false));
 
-        verify(newsletterIssueFinder).findIssues(eq(42L), any(Pageable.class));
+        verify(newsletterIssueFinder).findIssues(eq(42L), isNull(), any(Pageable.class));
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
+    @DisplayName("보관함 뉴스레터 이슈 조회 시 keyword query parameter를 전달한다")
+    void getIssues_passes_keyword_query_parameter() throws Exception {
+        // given
+        String keyword = "spring";
+        PageRequest pageable = PageRequest.of(0, 20);
+        given(newsletterIssueFinder.findIssues(eq(42L), eq(keyword), any(Pageable.class)))
+                .willReturn(new SliceImpl<>(List.of(), pageable, false));
+
+        // when & then
+        mockMvc.perform(get("/api/v1/me/newsletter-issues")
+                        .queryParam("keyword", keyword))
+                .andExpect(status().isOk());
+
+        verify(newsletterIssueFinder).findIssues(eq(42L), eq(keyword), any(Pageable.class));
     }
 
     @Test

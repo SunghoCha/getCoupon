@@ -14,13 +14,13 @@ public interface NewsletterIssueControllerApi {
 
     @Operation(
             summary = "보관함 뉴스레터 이슈 목록 조회",
-            description = "로그인한 회원이 보관함 탭에서 자신의 뉴스레터 이슈 목록을 조회한다."
+            description = "로그인한 회원이 보관함 탭에서 자신의 뉴스레터 이슈 목록을 조회한다. keyword가 있으면 이슈 제목, 본문, 뉴스레터 이름으로 검색한다."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "400", description = "요청 query parameter 형식 오류")
     })
-    NewsletterIssuesResponse getIssues(LoginUser loginUser, Pageable pageable);
+    NewsletterIssuesResponse getIssues(LoginUser loginUser, String keyword, Pageable pageable);
 
     @Operation(
             summary = "오늘 도착한 뉴스레터 이슈 목록 조회",

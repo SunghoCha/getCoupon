@@ -37,9 +37,10 @@ public class NewsletterIssueController implements NewsletterIssueControllerApi {
     @GetMapping
     public NewsletterIssuesResponse getIssues(
             @CurrentUser LoginUser loginUser,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        Slice<NewsletterIssueItem> issueItems = newsletterIssueFinder.findIssues(loginUser.memberId(), pageable);
+        Slice<NewsletterIssueItem> issueItems = newsletterIssueFinder.findIssues(loginUser.memberId(), keyword, pageable);
         return NewsletterIssuesResponse.from(issueItems);
     }
 
