@@ -155,6 +155,16 @@ class NewsletterIssueControllerSecurityTest {
 
     @Test
     @WithLoginUser(memberId = 42L)
+    @DisplayName("인증 사용자가 CSRF 없이 뉴스레터 이슈 삭제 시 403")
+    void deleteIssue_returns_403_when_csrf_missing() throws Exception {
+        mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(newsletterIssueModifier);
+    }
+
+    @Test
+    @WithLoginUser(memberId = 42L)
     @DisplayName("인증 사용자가 뉴스레터 이슈 삭제 시 권한 통과")
     void deleteIssue_passes_for_authenticated() throws Exception {
         mockMvc.perform(delete("/api/v1/me/newsletter-issues/{issueId}", 10L)
