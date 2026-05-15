@@ -118,8 +118,8 @@ public class NewsletterIssueRepositoryImpl implements CustomNewsletterIssueRepos
 
         String trimmedKeyword = keyword.trim();
 
-        return newsletterIssue.subject.containsIgnoreCase(trimmedKeyword)
+        return newsletterIssue.subject.contains(trimmedKeyword)
                 .or(newsletterIssue.content.contains(trimmedKeyword))
-                .or(newsletter.name.containsIgnoreCase(trimmedKeyword));
+                .or(newsletter.name.contains(trimmedKeyword));
     }
 }
