@@ -59,14 +59,16 @@ class NewsletterIssueQueryServiceTest {
         NewsletterIssueSearchCondition condition = conditionCaptor.getValue();
         assertThat(condition.receivedFrom()).isEqualTo(Instant.parse("2050-05-11T15:00:00Z"));
         assertThat(condition.receivedTo()).isEqualTo(Instant.parse("2050-05-12T15:00:00Z"));
+        assertThat(condition.keyword()).isNull();
         assertThat(result).isSameAs(expectedResult);
     }
 
     @Test
-    @DisplayName("보관함 이슈 조회는 날짜 조건 없이 회원의 뉴스레터 이슈를 조회한다")
-    void findIssues_queries_member_issues_without_received_at_range() {
+    @DisplayName("보관함 이슈 조회는 keyword를 전달하고 날짜 조건 없이 회원의 뉴스레터 이슈를 조회한다")
+    void findIssues_queries_member_issues_with_keyword_without_received_at_range() {
         // given
         Long memberId = 1L;
+        String keyword = "spring";
         Pageable pageable = PageRequest.of(0, 20);
         Clock clock = Clock.fixed(Instant.parse("2050-05-12T03:00:00Z"), ZoneOffset.UTC);
         NewsletterIssueQueryService newsletterIssueQueryService =
@@ -80,7 +82,7 @@ class NewsletterIssueQueryServiceTest {
         )).willReturn(expectedResult);
 
         // when
-        Slice<NewsletterIssueItem> result = newsletterIssueQueryService.findIssues(memberId, pageable);
+        Slice<NewsletterIssueItem> result = newsletterIssueQueryService.findIssues(memberId, keyword, pageable);
 
         // then
         ArgumentCaptor<NewsletterIssueSearchCondition> conditionCaptor =
@@ -90,6 +92,7 @@ class NewsletterIssueQueryServiceTest {
         NewsletterIssueSearchCondition condition = conditionCaptor.getValue();
         assertThat(condition.receivedFrom()).isNull();
         assertThat(condition.receivedTo()).isNull();
+        assertThat(condition.keyword()).isEqualTo(keyword);
         assertThat(result).isSameAs(expectedResult);
     }
 }

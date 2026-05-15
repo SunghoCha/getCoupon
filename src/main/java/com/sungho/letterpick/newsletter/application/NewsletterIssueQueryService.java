@@ -36,8 +36,12 @@ public class NewsletterIssueQueryService implements NewsletterIssueFinder {
     }
 
     @Override
-    public Slice<NewsletterIssueItem> findIssues(Long memberId, Pageable pageable) {
-        return newsletterIssueRepository.findAllByMemberId(memberId, NewsletterIssueSearchCondition.empty(), pageable);
+    public Slice<NewsletterIssueItem> findIssues(Long memberId, String keyword, Pageable pageable) {
+        return newsletterIssueRepository.findAllByMemberId(
+                memberId,
+                NewsletterIssueSearchCondition.withKeyword(keyword),
+                pageable
+        );
     }
 
     @Override

@@ -99,7 +99,7 @@ class NewsletterIssueRepositoryImplTest {
         // when
         Slice<NewsletterIssueItem> result = newsletterIssueRepository.findAllByMemberId(
                 memberId,
-                new NewsletterIssueSearchCondition(receivedFrom, receivedTo),
+                NewsletterIssueSearchCondition.receivedAtRange(receivedFrom, receivedTo),
                 PageRequest.of(0, 10)
         );
         // then
@@ -144,7 +144,7 @@ class NewsletterIssueRepositoryImplTest {
 
         Slice<NewsletterIssueItem> result = newsletterIssueRepository.findAllByMemberId(
                 memberId,
-                new NewsletterIssueSearchCondition(receivedFrom, receivedTo),
+                NewsletterIssueSearchCondition.receivedAtRange(receivedFrom, receivedTo),
                 PageRequest.of(0, 1)
         );
 
@@ -211,6 +211,69 @@ class NewsletterIssueRepositoryImplTest {
         assertThat(result.getContent())
                 .extracting(NewsletterIssueItem::issueId)
                 .containsExactly(latestIssue.getId(), oldIssue.getId());
+    }
+
+    @Test
+    @DisplayName("키워드가 제목, 본문, 뉴스레터 이름 중 하나에 포함되면 이슈를 조회한다")
+    void findAllByMemberId_returns_issues_matching_keyword_in_subject_content_or_newsletter_name() {
+        // given
+        Long memberId = 1L;
+        String keyword = "스프링";
+
+        Newsletter subjectNewsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("제목 매칭 뉴스레터", NewsletterCategory.TECH)
+        );
+        Newsletter contentNewsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("본문 매칭 뉴스레터", NewsletterCategory.BIZ)
+        );
+        Newsletter nameNewsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("스프링 뉴스레터", NewsletterCategory.TECH)
+        );
+        Newsletter unmatchedNewsletter = newslettersRepository.save(
+                NewsletterFixture.createNewsletter("매칭 없는 뉴스레터", NewsletterCategory.BIZ)
+        );
+
+        memberNewsletterRepository.save(MemberNewsletter.create(memberId, subjectNewsletter.getId()));
+        memberNewsletterRepository.save(MemberNewsletter.create(memberId, contentNewsletter.getId()));
+        memberNewsletterRepository.save(MemberNewsletter.create(memberId, nameNewsletter.getId()));
+        memberNewsletterRepository.save(MemberNewsletter.create(memberId, unmatchedNewsletter.getId()));
+
+        NewsletterIssue subjectMatchedIssue = newsletterIssueRepository.save(
+                createIssue(memberId, subjectNewsletter.getId(), 30L, "스프링 릴리즈 소식",
+                        "다른 본문", "다른 미리보기", Instant.parse("2050-05-12T00:00:00Z"))
+        );
+        NewsletterIssue contentMatchedIssue = newsletterIssueRepository.save(
+                createIssue(memberId, contentNewsletter.getId(), 31L, "다른 제목",
+                        "스프링 핵심 정리", "다른 미리보기", Instant.parse("2050-05-12T01:00:00Z"))
+        );
+        NewsletterIssue newsletterNameMatchedIssue = newsletterIssueRepository.save(
+                createIssue(memberId, nameNewsletter.getId(), 32L, "다른 제목",
+                        "다른 본문", "다른 미리보기", Instant.parse("2050-05-12T02:00:00Z"))
+        );
+        newsletterIssueRepository.save(
+                createIssue(memberId, unmatchedNewsletter.getId(), 33L, "다른 제목",
+                        "다른 본문", "다른 미리보기", Instant.parse("2050-05-12T03:00:00Z"))
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Slice<NewsletterIssueItem> result = newsletterIssueRepository.findAllByMemberId(
+                memberId,
+                NewsletterIssueSearchCondition.withKeyword(keyword),
+                PageRequest.of(0, 10)
+        );
+
+        // then
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getContent())
+                .extracting(NewsletterIssueItem::issueId)
+                .containsExactly(
+                        newsletterNameMatchedIssue.getId(),
+                        contentMatchedIssue.getId(),
+                        subjectMatchedIssue.getId()
+                );
     }
 
     @Test

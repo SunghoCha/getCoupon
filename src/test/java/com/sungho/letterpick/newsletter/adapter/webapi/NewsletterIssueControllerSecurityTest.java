@@ -27,6 +27,7 @@ import java.util.List;
 import static com.sungho.letterpick.common.auth.SecurityAuthorities.ROLE_PENDING_SIGNUP;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -113,13 +114,13 @@ class NewsletterIssueControllerSecurityTest {
     @WithLoginUser(memberId = 42L)
     @DisplayName("인증 사용자가 보관함 뉴스레터 이슈 목록 조회 시 권한 통과")
     void getIssues_passes_for_authenticated() throws Exception {
-        given(newsletterIssueFinder.findIssues(eq(42L), any(Pageable.class)))
+        given(newsletterIssueFinder.findIssues(eq(42L), isNull(), any(Pageable.class)))
                 .willReturn(new SliceImpl<>(List.of(), PageRequest.of(0, 20), false));
 
         mockMvc.perform(get("/api/v1/me/newsletter-issues"))
                 .andExpect(status().isOk());
 
-        verify(newsletterIssueFinder).findIssues(eq(42L), any(Pageable.class));
+        verify(newsletterIssueFinder).findIssues(eq(42L), isNull(), any(Pageable.class));
     }
 
     @Test
