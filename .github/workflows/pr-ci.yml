@@ -30,6 +30,9 @@ jobs:
       - name: Build backend
         run: ./gradlew build
 
+      - name: Build backend image
+        run: docker build -t letterpick-backend:${{ github.sha }} .
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest

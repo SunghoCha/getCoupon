@@ -1,0 +1,16 @@
+.git
+.github
+.gradle
+.idea
+.playwright-mcp
+.serena
+build/*
+!build/libs/
+build/libs/*
+!build/libs/app.jar
+bin
+docs
+frontend
+.env
+.mcp.json
+*.log
