@@ -22,6 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @ConditionalOnProperty(name = "letterpick.seed.newsletter.local-test.enabled", havingValue = "true")
 public class LocalNewsletterSeedRunner implements ApplicationRunner {
 
+    private static final String LOCAL_TEST_NEWSLETTER_NAME = "로컬 테스트 뉴스레터";
+    private static final String LOCAL_TEST_NEWSLETTER_DESCRIPTION = "로컬 메일 수신 E2E 테스트용 뉴스레터";
+    private static final String LOCAL_TEST_NEWSLETTER_IMAGE_URL = "https://example.com/letterpick-local-test-newsletter.png";
+    private static final NewsletterCategory LOCAL_TEST_NEWSLETTER_CATEGORY = NewsletterCategory.TECH;
+    private static final String LOCAL_TEST_NEWSLETTER_SUBSCRIBE_URL = "https://example.com/subscribe";
+    private static final String LOCAL_TEST_NEWSLETTER_MAIN_PAGE_URL = "https://example.com";
     private static final String LOCAL_TEST_NEWSLETTER_EMAIL = "tjdgh1129@gmail.com";
 
     private final NewslettersRepository newslettersRepository;
@@ -35,12 +41,12 @@ public class LocalNewsletterSeedRunner implements ApplicationRunner {
         }
 
         Newsletter newsletter = Newsletter.register(
-                "로컬 테스트 뉴스레터",
-                "로컬 메일 수신 E2E 테스트용 뉴스레터",
-                "https://example.com/letterpick-local-test-newsletter.png",
-                NewsletterCategory.TECH,
-                "https://example.com/subscribe",
-                "https://example.com",
+                LOCAL_TEST_NEWSLETTER_NAME,
+                LOCAL_TEST_NEWSLETTER_DESCRIPTION,
+                LOCAL_TEST_NEWSLETTER_IMAGE_URL,
+                LOCAL_TEST_NEWSLETTER_CATEGORY,
+                LOCAL_TEST_NEWSLETTER_SUBSCRIBE_URL,
+                LOCAL_TEST_NEWSLETTER_MAIN_PAGE_URL,
                 new Email(LOCAL_TEST_NEWSLETTER_EMAIL)
         );
 

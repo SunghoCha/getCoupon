@@ -32,13 +32,17 @@ public class NewsletterMailReceiveService {
         InboundEmail inboundEmail = saveInboundEmail(receivedMail);
 
         RecipientAddressResolution recipientAddressResolution = recipientAddressResolver.resolve(receivedMail.recipientAddress());
-        if (recipientAddressResolution.type() == RecipientAddressResolution.Type.INVALID_ADDRESS) {
-            inboundEmail.markInvalidRecipientAddress();
-            return;
-        }
-        if (recipientAddressResolution.type() == RecipientAddressResolution.Type.NOT_FOUND) {
-            inboundEmail.markRecipientNotFound();
-            return;
+        switch (recipientAddressResolution.type()) {
+            case INVALID_ADDRESS -> {
+                inboundEmail.markInvalidRecipientAddress();
+                return;
+            }
+            case NOT_FOUND -> {
+                inboundEmail.markRecipientNotFound();
+                return;
+            }
+            case FOUND -> {
+            }
         }
 
         Long memberId = recipientAddressResolution.memberId();

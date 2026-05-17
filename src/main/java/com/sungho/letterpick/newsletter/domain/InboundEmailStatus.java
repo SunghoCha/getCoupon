@@ -1,7 +1,5 @@
 package com.sungho.letterpick.newsletter.domain;
-/*
 
- */
 public enum InboundEmailStatus {
 
     /**

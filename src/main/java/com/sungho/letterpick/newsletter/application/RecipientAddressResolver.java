@@ -8,10 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-/*
-    지금은 뉴스레터 서비스가 멤버레포지토리 의존하지만
-    나중 분리가능성 생각해서 별도 클래스로 둠
-*/
 @Service
 @RequiredArgsConstructor
 public class RecipientAddressResolver {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -20,7 +21,7 @@ public class SesNotificationParser {
         try {
             JsonNode root = objectMapper.readTree(json);
             String messageKey = requiredText(root.path("mail").path("messageId"), "mail.messageId");
-            Instant receivedAt = Instant.parse(requiredText(root.path("mail").path("timestamp"), "mail.timestamp"));
+            Instant receivedAt = requiredInstant(root.path("mail").path("timestamp"), "mail.timestamp");
             String recipientAddress = requiredSingleText(root.path("receipt").path("recipients"), "receipt.recipients");
             JsonNode action = root.path("receipt").path("action");
             String actionType = requiredText(action.path("type"), "receipt.action.type");
@@ -39,6 +40,15 @@ public class SesNotificationParser {
             );
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Invalid SES notification json", e);
+        }
+    }
+
+    private Instant requiredInstant(JsonNode node, String fieldPath) {
+        String value = requiredText(node, fieldPath);
+        try {
+            return Instant.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid SES notification timestamp: " + fieldPath, e);
         }
     }
 
