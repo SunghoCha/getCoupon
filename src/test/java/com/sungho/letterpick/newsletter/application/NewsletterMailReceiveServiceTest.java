@@ -52,6 +52,8 @@ class NewsletterMailReceiveServiceTest {
         ReceivedMail receivedMail = ReceivedMailFixture.create();
         given(inboundEmailRepository.save(any(InboundEmail.class)))
                 .willAnswer(invocation -> invocation.getArgument(0, InboundEmail.class));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.notFound());
         // when
         newsletterMailReceiveService.receive(receivedMail);
         // then
@@ -73,19 +75,50 @@ class NewsletterMailReceiveServiceTest {
         ReceivedMail receivedMail = ReceivedMailFixture.create();
         given(inboundEmailRepository.save(any(InboundEmail.class)))
                 .willAnswer(invocation -> invocation.getArgument(0, InboundEmail.class));
-        given(recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress()))
-                .willReturn(Optional.empty());
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.notFound());
         // when
         newsletterMailReceiveService.receive(receivedMail);
         // then
         ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
         verify(inboundEmailRepository).save(captor.capture());
-        verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
 
         InboundEmail inboundEmail = captor.getValue();
         assertThat(inboundEmail.getRecipientAddress()).isEqualTo(receivedMail.recipientAddress());
         assertThat(inboundEmail.getStatus()).isEqualTo(InboundEmailStatus.RECIPIENT_NOT_FOUND);
         assertThat(inboundEmail.getMemberId()).isNull();
+    }
+
+    @Test
+    @DisplayName("수신자 주소 형식이 바르지 않으면 수신 상태를 INVALID_RECIPIENT_ADDRESS로 표시한다")
+    void receive_marks_invalid_recipient_address_when_recipient_address_is_invalid() {
+        // given
+        ReceivedMail receivedMail = ReceivedMailFixture.create(
+                "test@inbound-dev.letterpicknews.com",
+                "newsletter@example.com"
+        );
+        given(inboundEmailRepository.save(any(InboundEmail.class)))
+                .willAnswer(invocation -> invocation.getArgument(0, InboundEmail.class));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.invalidAddress());
+        // when
+        newsletterMailReceiveService.receive(receivedMail);
+        // then
+        ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
+        verify(inboundEmailRepository).save(captor.capture());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
+        verifyNoInteractions(
+                newslettersRepository,
+                memberNewsletterRepository,
+                newsletterIssueRepository
+        );
+
+        InboundEmail inboundEmail = captor.getValue();
+        assertThat(inboundEmail.getRecipientAddress()).isEqualTo(receivedMail.recipientAddress());
+        assertThat(inboundEmail.getStatus()).isEqualTo(InboundEmailStatus.INVALID_RECIPIENT_ADDRESS);
+        assertThat(inboundEmail.getMemberId()).isNull();
+        assertThat(inboundEmail.getNewsletterId()).isNull();
     }
 
     @Test
@@ -96,8 +129,8 @@ class NewsletterMailReceiveServiceTest {
         ReceivedMail receivedMail = ReceivedMailFixture.create();
         given(inboundEmailRepository.save(any(InboundEmail.class)))
                 .willAnswer(invocation -> invocation.getArgument(0, InboundEmail.class));
-        given(recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress()))
-                .willReturn(Optional.of(memberId));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.found(memberId));
         given(newslettersRepository.findByEmailAddress(receivedMail.senderEmail()))
                 .willReturn(Optional.empty());
         // when
@@ -105,7 +138,7 @@ class NewsletterMailReceiveServiceTest {
         // then
         ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
         verify(inboundEmailRepository).save(captor.capture());
-        verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
 
         InboundEmail inboundEmail = captor.getValue();
@@ -124,8 +157,8 @@ class NewsletterMailReceiveServiceTest {
         ReceivedMail receivedMail = ReceivedMailFixture.create();
         given(inboundEmailRepository.save(any(InboundEmail.class)))
                 .willAnswer(invocation -> invocation.getArgument(0, InboundEmail.class));
-        given(recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress()))
-                .willReturn(Optional.of(memberId));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.found(memberId));
 
         Newsletter newsletter = NewsletterFixture.createNewsletterWithId(newsletterId);
         given(newslettersRepository.findByEmailAddress(receivedMail.senderEmail()))
@@ -140,7 +173,7 @@ class NewsletterMailReceiveServiceTest {
         // then
         ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
         verify(inboundEmailRepository).save(captor.capture());
-        verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
         verify(memberNewsletterRepository).findByMemberIdAndNewsletterId(memberId, newsletterId);
 
@@ -167,8 +200,8 @@ class NewsletterMailReceiveServiceTest {
                     return inboundEmail;
                 });
 
-        given(recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress()))
-                .willReturn(Optional.of(memberId));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.found(memberId));
 
         Newsletter newsletter = NewsletterFixture.createNewsletterWithId(newsletterId);
         given(newslettersRepository.findByEmailAddress(receivedMail.senderEmail()))
@@ -184,7 +217,7 @@ class NewsletterMailReceiveServiceTest {
         // then
         ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
         verify(inboundEmailRepository).save(captor.capture());
-        verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
         verify(memberNewsletterRepository).findByMemberIdAndNewsletterId(memberId, newsletterId);
         verify(newsletterIssuePreviewGenerator).generate(receivedMail.content());
@@ -224,8 +257,8 @@ class NewsletterMailReceiveServiceTest {
                     return inboundEmail;
                 });
 
-        given(recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress()))
-                .willReturn(Optional.of(memberId));
+        given(recipientAddressResolver.resolve(receivedMail.recipientAddress()))
+                .willReturn(RecipientAddressResolution.found(memberId));
 
         Newsletter newsletter = NewsletterFixture.createNewsletterWithId(newsletterId);
         given(newslettersRepository.findByEmailAddress(receivedMail.senderEmail()))
@@ -241,7 +274,7 @@ class NewsletterMailReceiveServiceTest {
         // then
         ArgumentCaptor<InboundEmail> captor = ArgumentCaptor.forClass(InboundEmail.class);
         verify(inboundEmailRepository).save(captor.capture());
-        verify(recipientAddressResolver).resolveMemberId(receivedMail.recipientAddress());
+        verify(recipientAddressResolver).resolve(receivedMail.recipientAddress());
         verify(newslettersRepository).findByEmailAddress(receivedMail.senderEmail());
         verify(memberNewsletterRepository).findByMemberIdAndNewsletterId(memberId, newsletterId);
         verify(newsletterIssuePreviewGenerator).generate(receivedMail.content());

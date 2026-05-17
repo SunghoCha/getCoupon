@@ -1,6 +1,13 @@
 spring:
   application:
     name: letterPick
+  cloud:
+    aws:
+      region:
+        static: ${LETTERPICK_AWS_REGION:ap-northeast-2}
+      sqs:
+        queue-not-found-strategy: FAIL
+        region: ${LETTERPICK_AWS_REGION:ap-northeast-2}
   jpa:
     properties:
       hibernate.jdbc.time_zone: UTC
@@ -34,3 +41,9 @@ frontend:
 newsletter:
   inbox-address:
     domain: ${NEWSLETTER_INBOX_ADDRESS_DOMAIN:inbound.letterpick.local}
+
+letterpick:
+  aws:
+    region: ${LETTERPICK_AWS_REGION:ap-northeast-2}
+  mail:
+    receive-queue: ${LETTERPICK_MAIL_RECEIVE_QUEUE:letterpick-mail-receive}

@@ -31,13 +31,21 @@ public class NewsletterMailReceiveService {
 
         InboundEmail inboundEmail = saveInboundEmail(receivedMail);
 
-        Optional<Long> memberIdOpt = recipientAddressResolver.resolveMemberId(receivedMail.recipientAddress());
-        if (memberIdOpt.isEmpty()) {
-            inboundEmail.markRecipientNotFound();
-            return;
+        RecipientAddressResolution recipientAddressResolution = recipientAddressResolver.resolve(receivedMail.recipientAddress());
+        switch (recipientAddressResolution.type()) {
+            case INVALID_ADDRESS -> {
+                inboundEmail.markInvalidRecipientAddress();
+                return;
+            }
+            case NOT_FOUND -> {
+                inboundEmail.markRecipientNotFound();
+                return;
+            }
+            case FOUND -> {
+            }
         }
 
-        Long memberId = memberIdOpt.get();
+        Long memberId = recipientAddressResolution.memberId();
         Optional<Newsletter> newsletterOpt = newslettersRepository.findByEmailAddress(receivedMail.senderEmail());
         if (newsletterOpt.isEmpty()) {
             inboundEmail.markNewsletterNotFound(memberId);
