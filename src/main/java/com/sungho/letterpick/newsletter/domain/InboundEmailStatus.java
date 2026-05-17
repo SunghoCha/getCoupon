@@ -25,6 +25,11 @@ public enum InboundEmailStatus {
     RECIPIENT_NOT_FOUND,
 
     /**
+     * 수신자 주소가 뉴스레터 수신 주소 형식과 맞지 않는 상태.
+     */
+    INVALID_RECIPIENT_ADDRESS,
+
+    /**
      * 발신자 이메일로 등록된 뉴스레터를 찾지 못한 상태.
      */
     NEWSLETTER_NOT_FOUND

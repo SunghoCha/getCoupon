@@ -1,6 +1,5 @@
 package com.sungho.letterpick.newsletter.application;
 
-
 import com.sungho.letterpick.member.adapter.persistence.MemberRepository;
 import com.sungho.letterpick.member.domain.Member;
 import com.sungho.letterpick.member.domain.NewsletterInboxAddress;
@@ -19,9 +18,17 @@ public class RecipientAddressResolver {
 
     private final MemberRepository memberRepository;
 
-    public Optional<Long> resolveMemberId(String recipientAddress) {
-        return memberRepository.findByNewsletterInboxAddress(new NewsletterInboxAddress(recipientAddress))
-                .map(Member::getId);
+    public RecipientAddressResolution resolve(String recipientAddress) {
+        Optional<NewsletterInboxAddress> newsletterInboxAddressOpt = NewsletterInboxAddress.tryCreate(recipientAddress);
+        if (newsletterInboxAddressOpt.isEmpty()) {
+            return RecipientAddressResolution.invalidAddress();
+        }
+
+        NewsletterInboxAddress newsletterInboxAddress = newsletterInboxAddressOpt.get();
+        return memberRepository.findByNewsletterInboxAddress(newsletterInboxAddress)
+                .map(Member::getId)
+                .map(RecipientAddressResolution::found)
+                .orElseGet(RecipientAddressResolution::notFound);
     }
 }
 

@@ -18,6 +18,25 @@ class NewsletterInboxAddressTest {
     }
 
     @Test
+    @DisplayName("유효한 주소이면 생성 시도 결과에 수신 주소를 담는다")
+    void tryCreateReturnsAddressWhenAddressIsValid() {
+        String address = "abcd1234efgh@inbound.letterpick.test";
+
+        assertThat(NewsletterInboxAddress.tryCreate(address))
+                .hasValueSatisfying(newsletterInboxAddress ->
+                        assertThat(newsletterInboxAddress.address()).isEqualTo(address));
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 주소이면 생성 시도 결과가 비어 있다")
+    void tryCreateReturnsEmptyWhenAddressIsInvalid() {
+        assertThat(NewsletterInboxAddress.tryCreate("abc123@inbound.letterpick.test")).isEmpty();
+        assertThat(NewsletterInboxAddress.tryCreate("ABCD1234EFGH@inbound.letterpick.test")).isEmpty();
+        assertThat(NewsletterInboxAddress.tryCreate("abcd1234efgh@localhost")).isEmpty();
+        assertThat(NewsletterInboxAddress.tryCreate(null)).isEmpty();
+    }
+
+    @Test
     @DisplayName("토큰 형식이 올바르지 않으면 생성 실패한다")
     void createFailsWhenTokenInvalid() {
         assertThatThrownBy(() -> new NewsletterInboxAddress("abc123@inbound.letterpick.test"))

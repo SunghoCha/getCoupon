@@ -86,6 +86,12 @@ public class InboundEmail {
         this.status = InboundEmailStatus.RECIPIENT_NOT_FOUND;
     }
 
+    public void markInvalidRecipientAddress() {
+        this.memberId = null;
+        this.newsletterId = null;
+        this.status = InboundEmailStatus.INVALID_RECIPIENT_ADDRESS;
+    }
+
     public void markNewsletterNotFound(Long memberId) {
         this.memberId = requireNonNull(memberId);
         this.newsletterId = null;

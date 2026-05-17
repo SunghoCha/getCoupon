@@ -1,4 +1,8 @@
 spring:
+  cloud:
+    aws:
+      sqs:
+        enabled: ${LETTERPICK_SQS_ENABLED:false}
   datasource:
     url: jdbc:mysql://localhost:3306/letterpick
     username: letterpick
@@ -14,5 +18,10 @@ newsletter:
 
 letterpick:
   seed:
+    member:
+      local-test:
+        enabled: true
     newsletter:
       enabled: true
+      local-test:
+        enabled: true

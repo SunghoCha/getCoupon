@@ -3,6 +3,7 @@ package com.sungho.letterpick.member.domain;
 import jakarta.persistence.Embeddable;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Embeddable
@@ -19,12 +20,16 @@ public class NewsletterInboxAddress {
     protected NewsletterInboxAddress() {
     }
 
+    public static Optional<NewsletterInboxAddress> tryCreate(String address) {
+        if (!isValid(address)) {
+            return Optional.empty();
+        }
+        return Optional.of(new NewsletterInboxAddress(address));
+    }
+
     public NewsletterInboxAddress(String address) {
         Objects.requireNonNull(address);
-        String[] parts = address.split("@", -1);
-        if (parts.length != 2
-                || !LOCAL_PART_PATTERN.matcher(parts[0]).matches()
-                || !DOMAIN_PATTERN.matcher(parts[1]).matches()) {
+        if (!isValid(address)) {
             throw new IllegalArgumentException("뉴스레터 수신 주소 형식이 바르지 않습니다.");
         }
         this.address = address;
@@ -32,6 +37,16 @@ public class NewsletterInboxAddress {
 
     public String address() {
         return address;
+    }
+
+    private static boolean isValid(String address) {
+        if (address == null) {
+            return false;
+        }
+        String[] parts = address.split("@", -1);
+        return parts.length == 2
+                && LOCAL_PART_PATTERN.matcher(parts[0]).matches()
+                && DOMAIN_PATTERN.matcher(parts[1]).matches();
     }
 
     @Override
